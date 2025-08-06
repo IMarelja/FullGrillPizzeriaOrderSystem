@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "GrillPizzeriaOrderMiddleware\\GrillPizzeriaOrderMiddleware.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "GrillPizzeriaOrderWebApp\\GrillPizzeriaOrderWebApp.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
