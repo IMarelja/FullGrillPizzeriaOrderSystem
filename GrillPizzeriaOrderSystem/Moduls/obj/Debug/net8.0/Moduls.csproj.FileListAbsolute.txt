@@ -1,0 +1,12 @@
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\bin\Debug\net8.0\Moduls.deps.json
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\bin\Debug\net8.0\Moduls.dll
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\bin\Debug\net8.0\Moduls.pdb
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\obj\Debug\net8.0\Moduls.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\obj\Debug\net8.0\Moduls.AssemblyInfoInputs.cache
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\obj\Debug\net8.0\Moduls.AssemblyInfo.cs
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\obj\Debug\net8.0\Moduls.csproj.CoreCompileInputs.cache
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\obj\Debug\net8.0\Moduls.sourcelink.json
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\obj\Debug\net8.0\Moduls.dll
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\obj\Debug\net8.0\refint\Moduls.dll
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\obj\Debug\net8.0\Moduls.pdb
+C:\Users\windsten\source\repos\FullGrillPizzeriaOrderSystem\GrillPizzeriaOrderSystem\Moduls\obj\Debug\net8.0\ref\Moduls.dll

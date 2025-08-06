@@ -1,0 +1,20 @@
+# Ignore bin and obj folders in each project
+GrillPizzeriaOrderSystem/DTO/bin/
+GrillPizzeriaOrderSystem/DTO/obj/
+
+GrillPizzeriaOrderSystem/GrillPizzeriaOrderMiddleware/bin/
+GrillPizzeriaOrderSystem/GrillPizzeriaOrderMiddleware/obj/
+
+GrillPizzeriaOrderSystem/GrillPizzeriaOrderWebApp/bin/
+GrillPizzeriaOrderSystem/GrillPizzeriaOrderWebApp/obj/
+
+GrillPizzeriaOrderSystem/ModelConstants/bin/
+GrillPizzeriaOrderSystem/ModelConstants/obj/
+
+GrillPizzeriaOrderSystem/Models/bin/
+GrillPizzeriaOrderSystem/Models/obj/
+
+GrillPizzeriaOrderSystem/ViewModels/bin/
+GrillPizzeriaOrderSystem/ViewModels/obj/
+
+GrillPizzeriaOrderSystem/.vs/
