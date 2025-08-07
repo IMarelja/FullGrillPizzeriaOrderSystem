@@ -33,12 +33,12 @@ GO
 -- TABLE: Food
 -- ========================
 CREATE TABLE [dbo].[Food] (
-    [Id]             INT IDENTITY(1,1) NOT NULL,
-    [Name]           NVARCHAR(100) NOT NULL,
-    [Description]    NVARCHAR(1000) NOT NULL,
-    [Price]          DECIMAL(10,2) NOT NULL,
-    [ImagePath]      NVARCHAR(255) NULL,
-    [FoodCategoryId] INT NOT NULL,
+    [Id]             INT IDENTITY(1,1) 	NOT NULL,
+    [Name]           NVARCHAR(100) 		NOT NULL,
+    [Description]    NVARCHAR(1000) 	NOT NULL,
+    [Price]          DECIMAL(10,2) 		NOT NULL,
+    [ImagePath]      NVARCHAR(255) 		NULL,
+    [FoodCategoryId] INT 				NOT NULL,
 	
     CONSTRAINT [PrimaryKey_Food] PRIMARY KEY CLUSTERED ([Id]),
     
@@ -50,8 +50,8 @@ GO
 -- TABLE: FoodAllergen (M:N)
 -- ========================
 CREATE TABLE [dbo].[FoodAllergen] (
-    [FoodId]     INT NOT NULL,
-    [AllergenId] INT NOT NULL,
+    [FoodId]     INT 	NOT NULL,
+    [AllergenId] INT 	NOT NULL,
 	
     CONSTRAINT [PrimaryKey_FoodAllergen] PRIMARY KEY CLUSTERED ([FoodId], [AllergenId]),
     
@@ -61,10 +61,10 @@ CREATE TABLE [dbo].[FoodAllergen] (
 GO
 
 CREATE TABLE [dbo].[Log] (
-    [Id]        INT IDENTITY(1,1) NOT NULL,
-    [Timestamp] DATETIME NOT NULL DEFAULT GETDATE(),
-    [Level]     NVARCHAR(20) NOT NULL,
-    [Message]   NVARCHAR(255) NOT NULL,
+    [Id]        INT IDENTITY(1,1) 	NOT NULL,
+    [Timestamp] DATETIME 			NOT NULL,
+    [Level]     NVARCHAR(20) 		NOT NULL,
+    [Message]   NVARCHAR(255) 		NOT NULL,
     
 	CONSTRAINT [PrimaryKey_Log] PRIMARY KEY CLUSTERED ([Id])
 );
@@ -73,8 +73,8 @@ CREATE TABLE [dbo].[Log] (
 -- TABLE: Role
 -- ========================
 CREATE TABLE [dbo].[Role] (
-    [Id]   INT IDENTITY(1,1) NOT NULL,
-    [Name] NVARCHAR(20) NOT NULL,
+    [Id]   INT IDENTITY(1,1)		NOT NULL,
+    [Name] NVARCHAR(20) 			NOT NULL,
 	
     CONSTRAINT [PrimaryKey_Role] PRIMARY KEY CLUSTERED ([Id])
 );
@@ -84,14 +84,14 @@ GO
 -- TABLE: User
 -- ========================
 CREATE TABLE [dbo].[User] (
-    [Id]           INT IDENTITY(1,1) NOT NULL,
-    [Username]     NVARCHAR(100) NOT NULL,
-    [PasswordHash] VARCHAR(255) NOT NULL,
-    [Email]        NVARCHAR(255) NOT NULL,
-    [FirstName]    NVARCHAR(100) NOT NULL,
-    [LastName]     NVARCHAR(100) NOT NULL,
-    [Phone]        NVARCHAR(40) NOT NULL,
-    [RoleID]       INT NOT NULL,
+    [Id]           INT IDENTITY(1,1) 	NOT NULL,
+    [Username]     NVARCHAR(100) 		NOT NULL,
+    [PasswordHash] VARCHAR(255) 		NOT NULL,
+    [Email]        NVARCHAR(255) 		NOT NULL,
+    [FirstName]    NVARCHAR(100) 		NOT NULL,
+    [LastName]     NVARCHAR(100) 		NOT NULL,
+    [Phone]        NVARCHAR(40) 		NOT NULL,
+    [RoleID]       INT 					NOT NULL,
 	
     CONSTRAINT [PrimaryKey_User] PRIMARY KEY CLUSTERED ([Id]),
     
@@ -103,9 +103,9 @@ GO
 -- TABLE: [Order]
 -- ========================
 CREATE TABLE [dbo].[Order] (
-    [Id]        INT IDENTITY(1,1) NOT NULL,
-    [UserId]    INT NOT NULL,
-    [OrderDate] DATETIME NOT NULL DEFAULT GETDATE(),
+    [Id]        INT IDENTITY(1,1) 	NOT NULL,
+    [UserId]    INT 				NOT NULL,
+    [OrderDate] DATETIME 			NOT NULL,
 	
     CONSTRAINT [PrimaryKey_Order] PRIMARY KEY CLUSTERED ([Id]),
     
@@ -116,9 +116,9 @@ CREATE TABLE [dbo].[Order] (
 -- TABLE: OrderFood (M:N)
 -- ========================
 CREATE TABLE [dbo].[OrderFood] (
-    [OrderId]  INT NOT NULL,
-    [FoodId]   INT NOT NULL,
-    [Quantity] INT NOT NULL CHECK ([Quantity] > 0),
+    [OrderId]  INT 			NOT NULL,
+    [FoodId]   INT 			NOT NULL,
+    [Quantity] INT 			NOT NULL,
 	
     CONSTRAINT [PrimaryKey_OrderFood] PRIMARY KEY CLUSTERED ([OrderId], [FoodId]),
     
@@ -142,7 +142,7 @@ VALUES
 'admin@example.com', 
 'Andy', 
 'Andincen', 
-'+38599777865', 
+'099777865', 
 (SELECT [Id] FROM [dbo].[Role] WHERE [Name] = 'admin')
 ); 
 GO
@@ -171,8 +171,17 @@ CREATE UNIQUE INDEX [Unique_Allergen_Name]
 GO
 
 -- ========================================
--- Constraints
+-- Default Constraints
 -- ========================================
-ALTER TABLE [User]
-	ADD CONSTRAINT Default_User_RoleId DEFAULT 1 FOR RoleId;
+ALTER TABLE [dbo].[User]
+	ADD CONSTRAINT Default_User_RoleId 
+	DEFAULT 1 FOR [RoleId];
+GO
+ALTER TABLE [dbo].[Log]
+	ADD CONSTRAINT DateFunction_Log_Timestamp
+	DEFAULT (GETDATE()) FOR [Timestamp]
+GO
+ALTER TABLE [dbo].[Order]
+	ADD CONSTRAINT DateFunction_Order_OrderDate
+	DEFAULT (GETDATE()) FOR [OrderDate]
 GO
