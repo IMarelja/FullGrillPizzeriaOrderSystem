@@ -8,17 +8,20 @@ using ModelConstants;
 
 namespace DTO.Food
 {
-    public class FoodCreateDto
+    public class FoodUpdateDto
     {
-        [Required(ErrorMessage = "Name is required.")]
+        [Required]
+        public int Id { get; set; }
+
+        [Required]
         [StringLength(ValidationConstants.NameMaxLength)]
         public string Name { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Description is required.")]
+        [Required]
         [StringLength(ValidationConstants.DescriptionMaxLength)]
         public string Description { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Price is required.")]
+        [Required]
         [DecimalRange((int)ValidationConstants.PriceDecimalInteger, (int)ValidationConstants.PriceDecimalFraction)]
         public decimal Price { get; set; }
 

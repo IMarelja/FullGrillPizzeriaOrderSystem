@@ -12,11 +12,11 @@ namespace DTO.Authentication
     {
         [Required]
         [DataType(DataType.Password)]
-        public string OldPassword { get; set; } = string.Empty; // Current password
+        public string OldPassword { get; set; } = string.Empty;
 
         [Required]
         [StringLength(ValidationConstants.PasswordPlainMaxLenght, MinimumLength = ValidationConstants.PasswordPlainMinLenght, ErrorMessage = "Password must be between 6 and 100 characters.")]
         [DataType(DataType.Password)]
-        public string NewPassword { get; set; } = string.Empty; // New password
+        public string NewPassword { get; set; } = string.Empty;
     }
 }
