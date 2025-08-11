@@ -15,6 +15,7 @@ namespace GrillPizzeriaOrderMiddleware.DatabaseContexts
         public DbSet<OrderFood> OrderFoods { get; set; }
         public DbSet<Allergen> Allergens { get; set; }
         public DbSet<FoodCategory> FoodCategories { get; set; }
+        public DbSet<Role> Roles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
