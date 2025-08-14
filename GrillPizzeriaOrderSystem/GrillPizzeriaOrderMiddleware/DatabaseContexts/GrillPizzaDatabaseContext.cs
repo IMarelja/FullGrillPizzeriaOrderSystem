@@ -8,14 +8,15 @@ namespace GrillPizzeriaOrderMiddleware.DatabaseContexts
         public GrillPizzaDatabaseContext(DbContextOptions<GrillPizzaDatabaseContext> context) 
             : base(context) {}
 
-        public DbSet<Log> Logs { get; set; }
-        public DbSet<User> Users { get; set; }
-        public DbSet<Order> Orders { get; set; }
-        public DbSet<Food> Foods { get; set; }
-        public DbSet<OrderFood> OrderFoods { get; set; }
-        public DbSet<Allergen> Allergens { get; set; }
-        public DbSet<FoodCategory> FoodCategories { get; set; }
-        public DbSet<Role> Roles { get; set; }
+        public DbSet<Log> Log { get; set; }
+        public DbSet<User> User { get; set; }
+        public DbSet<Order> Order { get; set; }
+        public DbSet<Food> Food { get; set; }
+        public DbSet<OrderFood> OrderFood { get; set; }
+        public DbSet<Allergen> Allergen { get; set; }
+        public DbSet<FoodCategory> FoodCategory { get; set; }
+        public DbSet<FoodAllergen> FoodAllergen { get; set; }
+        public DbSet<Role> Role { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -33,19 +33,20 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var user = await _context.Users
+            var user = await _context.User
+                .Include(u => u.Role)
                 .FirstOrDefaultAsync(u =>
                     u.Username == loginUser.Username.Trim() &&
                     u.PasswordHash == Hashing.sha256(loginUser.Password));
-
+                
             if (user == null)
                 return Unauthorized("Invalid credentials.");
 
             string token = GenerateJwtToken(user);
-            _context.Logs.Add(new Log
+            _context.Log.Add(new Log
             {
                 Level = "Info",
-                Message = $"New user registered by id={user.Id}"
+                Message = $"New user logged in by id={user.Id}"
             });
             return Ok(new { token });
         }
@@ -56,10 +57,10 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (_context.Users.Any(u => u.Username == registerUser.Username.Trim()))
+            if (_context.User.Any(u => u.Username == registerUser.Username.Trim()))
                 return BadRequest("Username is already being used.");
 
-            if (_context.Users.Any(u => u.Email == registerUser.Email.Trim()))
+            if (_context.User.Any(u => u.Email == registerUser.Email.Trim()))
                 return BadRequest("Email is already being used.");
 
             var user = new User
@@ -69,14 +70,14 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 Email = registerUser.Email.Trim(),
                 FirstName = registerUser.FirstName.Trim(),
                 LastName = registerUser.LastName.Trim(),
-                Phone = registerUser.Phone.Trim()
-                //RoleId = _context.Roles.First(r => r.Name == "user").Id
+                Phone = registerUser.Phone.Trim(),
+                RoleId = _context.Role.First(r => r.Name == "user").Id
             };
 
-            _context.Users.Add(user);
+            _context.User.Add(user);
             await _context.SaveChangesAsync();
 
-            _context.Logs.Add(new Log
+            _context.Log.Add(new Log
             {
                 Level = "Info",
                 Message = $"User logged-in by id={user.Id}"
@@ -97,7 +98,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             if (sid == null || !int.TryParse(sid, out var userId))
                 return Unauthorized();
 
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _context.User.FindAsync(userId);
             var oldPassword = Hashing.sha256(changePassword.OldPassword);
             var newPassword = Hashing.sha256(changePassword.NewPassword);
 
@@ -113,14 +114,14 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             user.PasswordHash = newPassword;
             await _context.SaveChangesAsync();
 
-            _context.Logs.Add(new Log
+            _context.Log.Add(new Log
             {
                 Level = "Info",
                 Message = $"User by id={user.Id} changed password."
             });
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("Password successfully changed");
         }
 
         private string GenerateJwtToken(User user)
@@ -144,7 +145,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 issuer: jwtSection["Issuer"],
                 audience: jwtSection["Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(3),
+                expires: DateTime.UtcNow.AddHours(5),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

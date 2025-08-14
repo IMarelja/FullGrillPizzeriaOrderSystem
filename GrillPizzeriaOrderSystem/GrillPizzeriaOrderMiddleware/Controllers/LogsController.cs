@@ -25,7 +25,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         [HttpGet("get/{n}")]
         public async Task<ActionResult<IEnumerable<LogReadDto>>> GetLast(int n)
         {
-            var logs = await _context.Logs
+            var logs = await _context.Log
                 .OrderByDescending(l => l.Timestamp)
                 .Take(n)
                 .ToListAsync();
@@ -34,13 +34,10 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             return Ok(dtos);
         }
 
-        /// <summary>
-        /// Returns the total number of log entries.
-        /// </summary>
         [HttpGet("count")]
         public async Task<ActionResult<int>> Count()
         {
-            var total = await _context.Logs.CountAsync();
+            var total = await _context.Log.CountAsync();
             return Ok(total);
         }
     }
