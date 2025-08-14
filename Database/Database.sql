@@ -1,4 +1,5 @@
-﻿:SETVAR NameType NVARCHAR(100) -- Name (general), Username, First name, Last name
+﻿/*
+:SETVAR NameType NVARCHAR(100)
 :SETVAR DescriptionType NVARCHAR(1000)
 :SETVAR ImagePathType NVARCHAR(255)
 :SETVAR EmailType NVARCHAR(255)
@@ -6,7 +7,7 @@
 :SETVAR PhoneType NVARCHAR(40)
 :SETVAR RoleNameType NVARCHAR(20)
 :SETVAR PriceType DECIMAL(10,2)
-
+*/
 -- ========================
 -- TABLE: Allergen
 -- ========================
@@ -91,11 +92,11 @@ CREATE TABLE [dbo].[User] (
     [FirstName]    NVARCHAR(100) 		NOT NULL,
     [LastName]     NVARCHAR(100) 		NOT NULL,
     [Phone]        NVARCHAR(40) 		NOT NULL,
-    [RoleID]       INT 					NOT NULL,
+    [RoleId]       INT 					NOT NULL,
 	
     CONSTRAINT [PrimaryKey_User] PRIMARY KEY CLUSTERED ([Id]),
     
-	CONSTRAINT [ForeignKey_User_Role] FOREIGN KEY ([RoleID]) REFERENCES [dbo].[Role]([Id])
+	CONSTRAINT [ForeignKey_User_Role] FOREIGN KEY ([RoleId]) REFERENCES [dbo].[Role]([Id])
 );
 GO
 
@@ -138,7 +139,7 @@ INSERT INTO [dbo].[User] (
 VALUES 
 (
 'admin', 
-'d033e22ae348aeb5660fc2140aec35850c4da997', /*SHA1 encrypted password: admin*/
+'8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', /*SHA256 encrypted password: admin*/
 'admin@example.com', 
 'Andy', 
 'Andincen', 
