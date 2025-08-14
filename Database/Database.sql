@@ -1,13 +1,4 @@
-﻿/*
-:SETVAR NameType NVARCHAR(100)
-:SETVAR DescriptionType NVARCHAR(1000)
-:SETVAR ImagePathType NVARCHAR(255)
-:SETVAR EmailType NVARCHAR(255)
-:SETVAR PasswordHashType NVARCHAR(255)
-:SETVAR PhoneType NVARCHAR(40)
-:SETVAR RoleNameType NVARCHAR(20)
-:SETVAR PriceType DECIMAL(10,2)
-*/
+﻿
 -- ========================
 -- TABLE: Allergen
 -- ========================
