@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DTO.Allergen;
 using GrillPizzeriaOrderMiddleware.DatabaseContexts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models;
@@ -21,6 +22,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<AllergenReadDto>>> GetAll()
         {
             var items = await _context.Allergen
@@ -31,6 +33,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [Authorize]
         public async Task<ActionResult<AllergenReadDto>> GetById(int id)
         {
             var entity = await _context.Allergen.FindAsync(id);
@@ -40,6 +43,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<AllergenReadDto>> Create([FromBody] AllergenCreateDto createDto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -57,6 +61,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Update(int id, [FromBody] AllergenCreateDto updateDto)
         {
             if (!ModelState.IsValid) 
@@ -79,6 +84,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var entity = await _context.Allergen.FindAsync(id);

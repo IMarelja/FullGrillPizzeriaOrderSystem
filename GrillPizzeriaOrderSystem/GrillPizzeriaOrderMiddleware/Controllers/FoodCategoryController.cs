@@ -8,6 +8,8 @@ using Models;
 
 namespace GrillPizzeriaOrderMiddleware.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")]
     public class FoodCategoryController : ControllerBase
     {
         private readonly GrillPizzaDatabaseContext _context;
@@ -21,7 +23,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // Create
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<FoodCategoryReadDto>> Create([FromBody] FoodCategoryCreateDto createDto)
         {
             if (!ModelState.IsValid)
@@ -37,6 +39,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // Read all
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<FoodCategoryReadDto>>> GetAll()
         {
             var entities = await _context.FoodCategory.ToListAsync();
@@ -46,6 +49,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // Read one
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<FoodCategoryReadDto>> Get(int id)
         {
             var entity = await _context.FoodCategory.FindAsync(id);
@@ -58,7 +62,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // Update
         [HttpPut("{id}")]
-        [Authorize]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Update(int id, [FromBody] FoodCategoryCreateDto updateDto)
         {
             if (!ModelState.IsValid)
@@ -83,7 +87,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         /// Deletes
         [HttpDelete("{id}")]
-        [Authorize]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var entity = await _context.FoodCategory.FindAsync(id);

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DTO.Order;
 using GrillPizzeriaOrderMiddleware.DatabaseContexts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models;
@@ -21,6 +22,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<OrderReadDto>>> GetAll()
         {
             var orders = await _context.Order
@@ -45,6 +47,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         public async Task<ActionResult<OrderReadDto>> Create([FromBody] OrderCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -91,6 +94,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
             var order = await _context.Order

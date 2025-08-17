@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DTO.Food;
 using GrillPizzeriaOrderMiddleware.DatabaseContexts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models;
@@ -22,6 +23,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // GET: api/food
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<FoodReadDto>>> GetAll()
         {
             var items = await _context.Food
@@ -35,6 +37,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // GET: api/food/5
         [HttpGet("{id:int}")]
+        [Authorize]
         public async Task<ActionResult<FoodReadDto>> GetById(int id)
         {
             var entity = await _context.Food
@@ -48,6 +51,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // GET: api/food/search?q=margherita&categoryId=2&page=1&pageSize=10
         [HttpGet("search")]
+        [Authorize]
         public async Task<ActionResult<object>> Search(
             [FromQuery] string? q,
             [FromQuery] int? categoryId,
@@ -93,6 +97,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // POST: api/food
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<FoodReadDto>> Create([FromBody] FoodCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -132,6 +137,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // PUT: api/food/5
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Update(int id, [FromBody] FoodUpdateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -177,6 +183,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // DELETE: api/food/5
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var entity = await _context.Food.FindAsync(id);
