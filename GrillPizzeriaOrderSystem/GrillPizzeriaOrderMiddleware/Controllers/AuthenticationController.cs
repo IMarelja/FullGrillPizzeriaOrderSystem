@@ -71,6 +71,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 FirstName = registerUser.FirstName.Trim(),
                 LastName = registerUser.LastName.Trim(),
                 Phone = registerUser.Phone.Trim(),
+                CreationDate = DateTime.Now,
                 RoleId = _context.Role.First(r => r.Name == "user").Id
             };
 
