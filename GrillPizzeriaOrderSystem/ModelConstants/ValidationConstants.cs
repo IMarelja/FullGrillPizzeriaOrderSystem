@@ -18,10 +18,17 @@
         
         // [Role]
         public const int RoleNameMaxLength = 20;
-        
-        // Price for [Food]
+
+        // Price for [Food] and [Order]'s [OrderTotalPrice]
         public const int PriceDecimalInteger = 10;
         public const int PriceDecimalFraction = 2;
+
+        // [Order] order lenght
+        public const int ItemsRequestMin = 1;
+
+        // [OrderFood]
+        public const int QuantityOfFoodMin = 1;
+        public const int QuantityOfFoodMax = 100;
     }
 
 }
