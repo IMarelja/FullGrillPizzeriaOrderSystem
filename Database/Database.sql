@@ -60,6 +60,7 @@ CREATE TABLE [dbo].[Log] (
     
 	CONSTRAINT [PrimaryKey_Log] PRIMARY KEY CLUSTERED ([Id])
 );
+GO
 
 -- ========================
 -- TABLE: Role
@@ -83,6 +84,7 @@ CREATE TABLE [dbo].[User] (
     [FirstName]    NVARCHAR(100) 		NOT NULL,
     [LastName]     NVARCHAR(100) 		NOT NULL,
     [Phone]        NVARCHAR(40) 		NOT NULL,
+	[CreationDate] DATETIME				NOT NULL,
     [RoleId]       INT 					NOT NULL,
 	
     CONSTRAINT [PrimaryKey_User] PRIMARY KEY CLUSTERED ([Id]),
@@ -95,14 +97,16 @@ GO
 -- TABLE: [Order]
 -- ========================
 CREATE TABLE [dbo].[Order] (
-    [Id]        INT IDENTITY(1,1) 	NOT NULL,
-    [UserId]    INT 				NOT NULL,
-    [OrderDate] DATETIME 			NOT NULL,
+    [Id]        		INT IDENTITY(1,1) 	NOT NULL,
+    [UserId]    		INT 				NOT NULL,
+    [OrderDate] 		DATETIME 			NOT NULL,
+	[OrderTotalPrice]	DECIMAL(10,2) 		NOT NULL,
 	
     CONSTRAINT [PrimaryKey_Order] PRIMARY KEY CLUSTERED ([Id]),
     
 	CONSTRAINT [ForeignKey_Order_User] FOREIGN KEY ([UserId]) REFERENCES [dbo].[User]([Id])
 );
+GO
 
 -- ========================
 -- TABLE: OrderFood (M:N)
@@ -117,26 +121,6 @@ CREATE TABLE [dbo].[OrderFood] (
 	CONSTRAINT [ForeignKey_OrderFood_Order] FOREIGN KEY ([OrderId]) REFERENCES [dbo].[Order]([Id]) ON DELETE CASCADE,
     CONSTRAINT [ForeignKey_OrderFood_Food] FOREIGN KEY ([FoodId]) REFERENCES [dbo].[Food]([Id]) ON DELETE CASCADE
 );
-
--- Insert Role
-INSERT INTO [dbo].[Role] ([Name])
-VALUES ('user'), ('admin');
-GO
-
--- Insert first admin user (admin)
-INSERT INTO [dbo].[User] (
-    [Username], [PasswordHash], [Email], [FirstName], [LastName], [Phone], [RoleID]
-)
-VALUES 
-(
-'admin', 
-'8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', /*SHA256 encrypted password: admin*/
-'admin@example.com', 
-'Andy', 
-'Andincen', 
-'099777865', 
-(SELECT [Id] FROM [dbo].[Role] WHERE [Name] = 'admin')
-); 
 GO
 
 -- ========================================
@@ -169,11 +153,48 @@ ALTER TABLE [dbo].[User]
 	ADD CONSTRAINT Default_User_RoleId 
 	DEFAULT 1 FOR [RoleId];
 GO
+ALTER TABLE [dbo].[User]
+	ADD CONSTRAINT DateFunction_User_CreationDate
+	DEFAULT (GETDATE()) FOR [CreationDate]
+GO
 ALTER TABLE [dbo].[Log]
 	ADD CONSTRAINT DateFunction_Log_Timestamp
-	DEFAULT (GETDATE()) FOR [Timestamp]
+	DEFAULT (GETDATE()) FOR [Timestamp];
 GO
 ALTER TABLE [dbo].[Order]
 	ADD CONSTRAINT DateFunction_Order_OrderDate
-	DEFAULT (GETDATE()) FOR [OrderDate]
+	DEFAULT (GETDATE()) FOR [OrderDate];
+GO
+ALTER TABLE [dbo].[OrderFood]
+	ADD CONSTRAINT Default_Quantity_Value 
+	DEFAULT 1 FOR [Quantity];
+GO
+ALTER TABLE [dbo].[OrderFood]
+	ADD CONSTRAINT Range_OrderFood_Quantity
+	CHECK ([Quantity] >= 1 AND [Quantity] <= 100)
+GO
+
+--==============
+-- INSERT
+--==============
+
+-- Insert Role
+INSERT INTO [dbo].[Role] ([Name])
+VALUES ('user'), ('admin');
+GO
+
+-- Insert first admin user (admin)
+INSERT INTO [dbo].[User] (
+    [Username], [PasswordHash], [Email], [FirstName], [LastName], [Phone], [RoleID]
+)
+VALUES 
+(
+'admin', 
+'8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', /*SHA256 hashed password: admin*/
+'admin@example.com', 
+'Andy', 
+'Andincen', 
+'099777865', 
+(SELECT [Id] FROM [dbo].[Role] WHERE [Name] = 'admin')
+); 
 GO

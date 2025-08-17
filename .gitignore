@@ -18,3 +18,5 @@ GrillPizzeriaOrderSystem/ViewModels/bin/
 GrillPizzeriaOrderSystem/ViewModels/obj/
 
 GrillPizzeriaOrderSystem/.vs/
+
+Database/BaseCreate.sql
