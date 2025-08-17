@@ -39,26 +39,26 @@ namespace GrillPizzeriaOrderMiddleware
             CreateMap<Allergen, AllergenReadDto>();
             CreateMap<AllergenCreateDto, Allergen>();
 
-            // Order
+            // Read mapping for Order → OrderReadDto
             CreateMap<Order, OrderReadDto>()
-                .ForMember(destination => destination.Username,
-                            options => options.MapFrom(
-                                source => source.User.Username
-                                )
-                            )
-                .ForMember(destination => destination.FoodNames,
-                            options => options.MapFrom(
-                                source => source.OrderFoods.Select(af => af.Food.Name).ToList()
-                                )
-                            );
+                .ForMember(d => d.Items, o => o.MapFrom(s => s.OrderFoods))
+                .ForMember(d => d.OrderTotal, o => o.MapFrom(s => s.OrderTotalPrice));
 
+            // Read mapping for OrderFood → OrderItemReadDto
+            CreateMap<OrderFood, OrderItemReadDto>()
+                .ForMember(d => d.FoodId, o => o.MapFrom(s => s.FoodId))
+                .ForMember(d => d.FoodName, o => o.MapFrom(s => s.Food.Name))
+                .ForMember(d => d.UnitPrice, o => o.MapFrom(s => s.Food.Price))
+                .ForMember(d => d.LineTotal, o => o.MapFrom(s => s.Quantity * s.Food.Price));
+
+            // Create mapping: OrderItemCreateDto → OrderFood
+            CreateMap<OrderItemCreateDto, OrderFood>();
+
+            // Create mapping: OrderCreateDto → Order
+            // (We'll set UserId/OrderDate in controller; here we only map items)
             CreateMap<OrderCreateDto, Order>()
-                .ForMember(destination => destination.OrderFoods, options => options.Ignore())
-                .ForMember(destination => destination.OrderDate, 
-                            options => options.MapFrom(
-                                _ => DateTime.UtcNow
-                                )
-                            );
+                .ForMember(d => d.OrderFoods, o => o.MapFrom(s => s.Items));
+
         }
     }
 }
