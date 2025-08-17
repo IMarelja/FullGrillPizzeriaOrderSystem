@@ -38,6 +38,7 @@ namespace Models
         [StringLength(ValidationConstants.PhoneMaxLength)]
         [Phone]
         public string Phone { get; set; } = string.Empty;
+        public DateTime DateCreation { get; set; }
 
         public int RoleId { get; set; }
         public Role Role { get; set; } = null!;
