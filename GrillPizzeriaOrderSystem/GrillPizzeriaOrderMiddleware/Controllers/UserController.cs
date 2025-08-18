@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GrillPizzeriaOrderMiddleware.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
         private readonly GrillPizzaDatabaseContext _context;
@@ -38,7 +40,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             return Ok(dto);
         }
 
-        [HttpGet]
+        [HttpGet("all")]
         [Authorize(Roles = "admin")]
         public async Task<ActionResult<IEnumerable<UserReadDto>>> GetAll(
         [FromQuery] int skip = 0,
