@@ -23,7 +23,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // GET: api/food
         [HttpGet]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<FoodReadDto>>> GetAll()
         {
             var items = await _context.Food
@@ -37,7 +37,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // GET: api/food/5
         [HttpGet("{id:int}")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<FoodReadDto>> GetById(int id)
         {
             var entity = await _context.Food
@@ -51,7 +51,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // GET: api/food/search?q=margherita&categoryId=2&page=1&pageSize=10
         [HttpGet("search")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<object>> Search(
             [FromQuery] string? q,
             [FromQuery] int? categoryId,

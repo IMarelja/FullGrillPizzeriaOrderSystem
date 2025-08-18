@@ -3,6 +3,7 @@ using DTO.Allergen;
 using DTO.Food;
 using DTO.FoodCategory;
 using DTO.Order;
+using DTO.User;
 using Microsoft.Extensions.Options;
 using Models;
 
@@ -11,6 +12,19 @@ namespace GrillPizzeriaOrderMiddleware
     public class MappingProfile : Profile
     {
         public MappingProfile() {
+
+            // User
+            CreateMap<User, UserReadDto>()
+                .ForMember(destination => destination.RoleName, option => option.MapFrom(source => source.Role.Name));
+
+            CreateMap<UserUpdateDto, User>()
+                .ForMember(destination => destination.Id, option => option.Ignore())
+                .ForMember(destination => destination.Username, option => option.Ignore())
+                .ForMember(destination => destination.PasswordHash, option => option.Ignore())
+                .ForMember(destination => destination.RoleId, option => option.Ignore())
+                .ForMember(destination => destination.Role, option => option.Ignore())
+                .ForMember(destination => destination.CreationDate, option => option.Ignore())
+                .ForMember(destination => destination.Orders, option => option.Ignore());
 
             // Food
             CreateMap<Food, FoodReadDto>()
