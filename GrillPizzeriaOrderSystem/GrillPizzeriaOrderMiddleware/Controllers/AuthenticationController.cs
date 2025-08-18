@@ -4,6 +4,7 @@ using System.Text;
 using DTO.Authentication;
 using GrillPizzeriaOrderMiddleware.DatabaseContexts;
 using GrillPizzeriaOrderMiddleware.Services.AlgoritamCryptography;
+using GrillPizzeriaOrderMiddleware.Services.AppLogging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -28,34 +29,37 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest loginUser)
+        public async Task<IActionResult> Login([FromBody] LoginRequest loginUser, [FromServices] IAppLogger log)
         {
             if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
+            }
 
             var user = await _context.User
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u =>
                     u.Username == loginUser.Username.Trim() &&
                     u.PasswordHash == Hashing.sha256(loginUser.Password));
-                
-            if (user == null)
+
+            if (user == null) {
+                await log.Error($"Authentication.Login: Invalid credentials from {loginUser.Username}");
                 return Unauthorized("Invalid credentials.");
+            }
 
             string token = GenerateJwtToken(user);
-            _context.Log.Add(new Log
-            {
-                Level = "Info",
-                Message = $"New user logged in by id={user.Id}"
-            });
+            await log.Information($"Authentication.Login: Logged in user id={user.Id}, role={user.Role.Name}.");
             return Ok(new { token });
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest registerUser)
+        public async Task<IActionResult> Register([FromBody] RegisterRequest registerUser, [FromServices] IAppLogger log)
         {
             if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
+            }
+                
 
             if (_context.User.Any(u => u.Username == registerUser.Username.Trim()))
                 return BadRequest("Username is already being used.");
@@ -78,19 +82,13 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             _context.User.Add(user);
             await _context.SaveChangesAsync();
 
-            _context.Log.Add(new Log
-            {
-                Level = "Info",
-                Message = $"User logged-in by id={user.Id}"
-            });
-            await _context.SaveChangesAsync();
-
+            await log.Information($"Authentication.Register: Registered user id={user.Id}, role={user.Role.Name}.");
             return Ok("User registered successfully.");
         }
 
         [HttpPost("changepassword")]
         [Authorize]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest changePassword)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest changePassword, [FromServices] IAppLogger log)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -104,7 +102,10 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             var newPassword = Hashing.sha256(changePassword.NewPassword);
 
             if (user == null)
+            {
+                await log.Information($"Authentication.ChangePassword: User not found id={user.Id}");
                 return NotFound("User not found.");
+            }
 
             if (user.PasswordHash != oldPassword)
                 return BadRequest("Old password is incorrect.");
@@ -115,12 +116,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             user.PasswordHash = newPassword;
             await _context.SaveChangesAsync();
 
-            _context.Log.Add(new Log
-            {
-                Level = "Info",
-                Message = $"User by id={user.Id} changed password."
-            });
-            await _context.SaveChangesAsync();
+            await log.Information($"Authentication.ChangePassword: Changed password user id={user.Id}");
 
             return Ok("Password successfully changed");
         }

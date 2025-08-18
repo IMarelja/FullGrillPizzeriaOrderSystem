@@ -1,12 +1,16 @@
 using System.Text;
 using GrillPizzeriaOrderMiddleware;
 using GrillPizzeriaOrderMiddleware.DatabaseContexts;
+using GrillPizzeriaOrderMiddleware.Services.AppLogging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// +- Logging -+
+builder.Services.AddScoped<IAppLogger, AppLogger>();
 
 // << Entity Framework DbContext -> SQL server connection >>
 builder.Services.AddDbContext<GrillPizzaDatabaseContext>(opts =>

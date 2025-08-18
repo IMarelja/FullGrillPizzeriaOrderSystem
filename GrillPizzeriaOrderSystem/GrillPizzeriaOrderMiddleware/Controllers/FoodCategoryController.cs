@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DTO.FoodCategory;
 using GrillPizzeriaOrderMiddleware.DatabaseContexts;
+using GrillPizzeriaOrderMiddleware.Services.AppLogging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,16 +25,30 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         // Create
         [HttpPost]
         [Authorize(Roles = "admin")]
-        public async Task<ActionResult<FoodCategoryReadDto>> Create([FromBody] FoodCategoryCreateDto createDto)
+        public async Task<ActionResult<FoodCategoryReadDto>> Create(
+            [FromBody] FoodCategoryCreateDto createDto,
+            [FromServices] IAppLogger log)
         {
             if (!ModelState.IsValid)
+            {
+                await log.Error("FoodCategory.Create failed: Bad Request");
                 return BadRequest(ModelState);
+            }
+
+            // Duplicate name check (mirror Allergen style)
+            var exists = await _context.FoodCategory.AnyAsync(c => c.Name == createDto.Name);
+            if (exists)
+            {
+                await log.Error($"FoodCategory.Create failed: Conflict with {createDto.Name}");
+                return BadRequest("Category with the same name already exists.");
+            }
 
             var entity = _mapper.Map<FoodCategory>(createDto);
             _context.FoodCategory.Add(entity);
             await _context.SaveChangesAsync();
 
             var readDto = _mapper.Map<FoodCategoryReadDto>(entity);
+            await log.Information($"FoodCategory.Create success: id={entity.Id}");
             return CreatedAtAction(nameof(Get), new { id = readDto.Id }, readDto);
         }
 
@@ -63,32 +78,43 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         // Update
         [HttpPut("{id}")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> Update(int id, [FromBody] FoodCategoryCreateDto updateDto)
+        public async Task<IActionResult> Update(
+            int id,
+            [FromBody] FoodCategoryCreateDto updateDto,
+            [FromServices] IAppLogger log)
         {
             if (!ModelState.IsValid)
+            {
+                await log.Error("FoodCategory.Update failed: Bad Request");
                 return BadRequest(ModelState);
+            }
 
             var entity = await _context.FoodCategory.FindAsync(id);
             if (entity == null)
                 return NotFound();
 
-            if (!string.Equals(entity.Name, updateDto.Name, StringComparison.OrdinalIgnoreCase) &&
-                await _context.FoodCategory.AnyAsync(c => c.Name == updateDto.Name))
+            // If name is changing, ensure uniqueness (mirror Allergen pattern)
+            if (!string.Equals(entity.Name, updateDto.Name, StringComparison.OrdinalIgnoreCase))
             {
-                return BadRequest("Category with the same name already exists.");
+                var nameTaken = await _context.FoodCategory.AnyAsync(c => c.Name == updateDto.Name);
+                if (nameTaken)
+                {
+                    await log.Error($"FoodCategory.Update failed: Conflict with {updateDto.Name}");
+                    return BadRequest("Category with the same name already exists.");
+                }
             }
 
             _mapper.Map(updateDto, entity);
-            _context.Entry(entity).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            await log.Information($"FoodCategory.Update success: id={entity.Id}");
+            return Ok($"Successful update of {entity.Name} in {entity.Id}");
         }
 
-        /// Deletes
+        // Delete
         [HttpDelete("{id}")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, [FromServices] IAppLogger log)
         {
             var entity = await _context.FoodCategory.FindAsync(id);
             if (entity == null)
@@ -97,7 +123,8 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             _context.FoodCategory.Remove(entity);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            await log.Information($"FoodCategory.Delete success: id={id}");
+            return Ok($"Successfully deletion of {entity.Name}");
         }
     }
 }

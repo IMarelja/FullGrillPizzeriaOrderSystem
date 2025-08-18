@@ -2,6 +2,7 @@
 using DTO.Allergen;
 using DTO.Food;
 using DTO.FoodCategory;
+using DTO.Log;
 using DTO.Order;
 using DTO.User;
 using Microsoft.Extensions.Options;
@@ -25,6 +26,9 @@ namespace GrillPizzeriaOrderMiddleware
                 .ForMember(destination => destination.Role, option => option.Ignore())
                 .ForMember(destination => destination.CreationDate, option => option.Ignore())
                 .ForMember(destination => destination.Orders, option => option.Ignore());
+
+            // Log 
+            CreateMap<Log, LogReadDto>();
 
             // Food
             CreateMap<Food, FoodReadDto>()

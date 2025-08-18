@@ -2,6 +2,7 @@
 using AutoMapper;
 using DTO.Order;
 using GrillPizzeriaOrderMiddleware.DatabaseContexts;
+using GrillPizzeriaOrderMiddleware.Services.AppLogging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,12 +23,9 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             _mapper = mapper;
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
-        // ADMIN: Get all
-        // ─────────────────────────────────────────────────────────────────────────────
         [HttpGet("all")]
         [Authorize(Roles = "admin")]
-        public async Task<ActionResult<IEnumerable<OrderReadDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<OrderReadDto>>> GetAll([FromServices] IAppLogger log)
         {
             var orders = await _context.Order
                 .Include(o => o.User)
@@ -35,35 +33,39 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
+            await log.Information($"Orders.GetAll success: count={orders.Count}");
             return Ok(_mapper.Map<IEnumerable<OrderReadDto>>(orders));
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
-        // ADMIN: Get by id
-        // ─────────────────────────────────────────────────────────────────────────────
         [HttpGet("{id:int}")]
         [Authorize(Roles = "admin")]
-        public async Task<ActionResult<OrderReadDto>> GetById(int id)
+        public async Task<ActionResult<OrderReadDto>> GetById(int id, [FromServices] IAppLogger log)
         {
             var order = await _context.Order
                 .Include(o => o.User)
                 .Include(o => o.OrderFoods).ThenInclude(of => of.Food)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
-            if (order == null) return NotFound();
+            if (order == null)
+            {
+                await log.Error($"Orders.GetById failed: Not Found id={id}");
+                return NotFound();
+            }
+
+            await log.Information($"Orders.GetById success: id={id}");
             return Ok(_mapper.Map<OrderReadDto>(order));
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
-        // USER: My orders
-        // ─────────────────────────────────────────────────────────────────────────────
         [HttpGet]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<OrderReadDto>>> GetMyOrders()
+        public async Task<ActionResult<IEnumerable<OrderReadDto>>> GetMyOrders([FromServices] IAppLogger log)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                await log.Error("Orders.GetMyOrders failed: Invalid token");
                 return Unauthorized("Invalid token");
+            }
 
             var orders = await _context.Order
                 .Where(o => o.UserId == userId)
@@ -72,34 +74,45 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
+            await log.Information($"Orders.GetMyOrders success: userId={userId}, count={orders.Count}");
             return Ok(_mapper.Map<IEnumerable<OrderReadDto>>(orders));
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
-        // USER: Create order (with quantities)
-        // ─────────────────────────────────────────────────────────────────────────────
         [HttpPost]
         [Authorize]
-        public async Task<ActionResult<OrderReadDto>> Create([FromBody] OrderCreateDto dto)
+        public async Task<ActionResult<OrderReadDto>> Create([FromBody] OrderCreateDto dto, [FromServices] IAppLogger log)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+            {
+                await log.Error("Orders.Create failed: Bad Request");
+                return BadRequest(ModelState);
+            }
 
             // Auth user
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                await log.Error("Orders.Create failed: Invalid token");
                 return Unauthorized("Invalid token");
+            }
 
             if (dto.Items == null || dto.Items.Count == 0)
+            {
+                await log.Error("Orders.Create failed: Empty items");
                 return BadRequest("Order must contain at least one item.");
+            }
 
-            // Normalize duplicates & validate quantities (1..100 like your DB CHECK)
+            // Normalize duplicates & validate quantities (1..100)
             var collapsed = dto.Items
                 .GroupBy(i => i.FoodId)
                 .Select(g => new { FoodId = g.Key, Quantity = g.Sum(x => x.Quantity) })
                 .ToList();
 
             if (collapsed.Any(x => x.Quantity < 1 || x.Quantity > 100))
+            {
+                await log.Error("Orders.Create failed: Quantity out of range (1..100)");
                 return BadRequest("Quantity must be between 1 and 100.");
+            }
 
             // Validate foods exist
             var foodIds = collapsed.Select(x => x.FoodId).Distinct().ToList();
@@ -109,19 +122,22 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 .ToListAsync();
 
             if (foods.Count != foodIds.Count)
+            {
+                await log.Error("Orders.Create failed: Invalid FoodId(s) provided");
                 return BadRequest("One or more provided FoodId values are invalid.");
+            }
 
             // Build order
             var order = new Order
             {
                 UserId = userId,
-                OrderDate = DateTime.UtcNow,    // you also have default GETDATE() at DB level
+                OrderDate = DateTime.UtcNow,
                 OrderFoods = collapsed
                     .Select(x => new OrderFood { FoodId = x.FoodId, Quantity = x.Quantity })
                     .ToList()
             };
 
-            // Compute total (decimal!) from current prices
+            // Compute total from current prices
             order.OrderTotalPrice = order.OrderFoods
                 .Sum(of => of.Quantity * foods.First(f => f.Id == of.FoodId).Price);
 
@@ -134,18 +150,15 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 .Include(o => o.OrderFoods).ThenInclude(of => of.Food)
                 .FirstAsync(o => o.Id == order.Id);
 
+            await log.Information($"Orders.Create success: id={order.Id}, items={order.OrderFoods.Count}, total={order.OrderTotalPrice}");
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, _mapper.Map<OrderReadDto>(created));
         }
 
-        // ─────────────────────────────────────────────────────────────────────────────
-        // USER/ADMIN: Delete order
-        // (You have ON DELETE CASCADE for OrderFood; removing the Order is enough.)
-        // ─────────────────────────────────────────────────────────────────────────────
         [HttpDelete("{id:int}")]
         [Authorize]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, [FromServices] IAppLogger log)
         {
-            // Optional: only admin or owner can delete
+            // Only admin or owner can delete
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             int.TryParse(userIdClaim, out int userId);
             bool isAdmin = User.IsInRole("admin");
@@ -154,14 +167,23 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == id);
 
-            if (order == null) return NotFound();
-            if (!isAdmin && order.UserId != userId) return Forbid();
+            if (order == null)
+            {
+                await log.Error($"Orders.Delete failed: Not Found id={id}");
+                return NotFound();
+            }
 
-            // With FK ON DELETE CASCADE, this removes children automatically
+            if (!isAdmin && order.UserId != userId)
+            {
+                await log.Error($"Orders.Delete failed: Forbid userId={userId} for orderId={id}");
+                return Forbid();
+            }
+
             _context.Order.Remove(new Order { Id = id });
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            await log.Information($"Orders.Delete success: id={id}, by={(isAdmin ? "admin" : $"user {userId}")}");
+            return Ok($"Successfully deleted order {id}");
         }
     }
 }

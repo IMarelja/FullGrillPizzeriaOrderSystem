@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DTO.Food;
 using GrillPizzeriaOrderMiddleware.DatabaseContexts;
+using GrillPizzeriaOrderMiddleware.Services.AppLogging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -53,13 +54,18 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         [HttpGet("search")]
         [AllowAnonymous]
         public async Task<ActionResult<object>> Search(
+            [FromServices] IAppLogger log,
             [FromQuery] string? q,
             [FromQuery] int? categoryId,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10
+            )
         {
             if (page < 1 || pageSize < 1 || pageSize > 100)
+            {
+                await log.Error("Food.Search failed: Invalid paging parameters.");
                 return BadRequest("Invalid paging parameters.");
+            }
 
             var query = _context.Food
                 .Include(f => f.FoodCategory)
@@ -98,16 +104,30 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         // POST: api/food
         [HttpPost]
         [Authorize(Roles = "admin")]
-        public async Task<ActionResult<FoodReadDto>> Create([FromBody] FoodCreateDto dto)
+        public async Task<ActionResult<FoodReadDto>> Create(
+            [FromBody] FoodCreateDto dto,
+            [FromServices] IAppLogger log)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+            {
+                await log.Error("Food.Create failed: Bad Request");
+                return BadRequest(ModelState);
+            }
 
             var nameTaken = await _context.Food.AnyAsync(f => f.Name == dto.Name);
-            if (nameTaken) return BadRequest("Food with the same name already exists.");
+            if (nameTaken)
+            {
+                await log.Error($"Food.Create failed: Conflict with {dto.Name}");
+                return BadRequest("Food with the same name already exists.");
+            }
 
             // Validate FK
             var categoryExists = await _context.FoodCategory.AnyAsync(c => c.Id == dto.FoodCategoryId);
-            if (!categoryExists) return BadRequest("Invalid FoodCategoryId.");
+            if (!categoryExists)
+            {
+                await log.Error("Food.Create failed: Invalid FoodCategoryId");
+                return BadRequest("Invalid FoodCategoryId.");
+            }
 
             var entity = _mapper.Map<Food>(dto);
             _context.Food.Add(entity);
@@ -132,15 +152,23 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 .Include(f => f.FoodAllergens).ThenInclude(fa => fa.Allergen)
                 .FirstAsync(f => f.Id == entity.Id);
 
+            await log.Information($"Food.Create success: id={entity.Id}");
             return CreatedAtAction(nameof(GetById), new { id = entity.Id }, _mapper.Map<FoodReadDto>(read));
         }
 
         // PUT: api/food/5
         [HttpPut("{id:int}")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> Update(int id, [FromBody] FoodUpdateDto dto)
+        public async Task<IActionResult> Update(
+            int id,
+            [FromBody] FoodUpdateDto dto,
+            [FromServices] IAppLogger log)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+            {
+                await log.Error("Food.Update failed: Bad Request");
+                return BadRequest(ModelState);
+            }
 
             var entity = await _context.Food
                 .Include(f => f.FoodAllergens)
@@ -151,11 +179,18 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             if (!string.Equals(entity.Name, dto.Name, StringComparison.OrdinalIgnoreCase))
             {
                 var nameTaken = await _context.Food.AnyAsync(f => f.Name == dto.Name);
-                if (nameTaken) return BadRequest("Food with the same name already exists.");
+                if (nameTaken)
+                {
+                    await log.Error($"Food.Update failed: Conflict with {dto.Name}");
+                    return BadRequest("Food with the same name already exists.");
+                }
             }
 
             if (!await _context.FoodCategory.AnyAsync(c => c.Id == dto.FoodCategoryId))
+            {
+                await log.Error("Food.Update failed: Invalid FoodCategoryId");
                 return BadRequest("Invalid FoodCategoryId.");
+            }
 
             _mapper.Map(dto, entity);
             await _context.SaveChangesAsync();
@@ -178,20 +213,23 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return NoContent();
+            await log.Information($"Food.Update success: id={entity.Id}");
+            return Ok($"Successful update of {entity.Name} in {entity.Id}");
         }
 
         // DELETE: api/food/5
         [HttpDelete("{id:int}")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, [FromServices] IAppLogger log)
         {
             var entity = await _context.Food.FindAsync(id);
             if (entity == null) return NotFound();
 
             _context.Food.Remove(entity);
             await _context.SaveChangesAsync();
-            return NoContent();
+
+            await log.Information($"Food.Delete success: id={id}");
+            return Ok($"Successfully deletion of {entity.Name}");
         }
     }
 }

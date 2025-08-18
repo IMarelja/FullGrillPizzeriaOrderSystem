@@ -23,6 +23,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpGet("get/{n}")]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<IEnumerable<LogReadDto>>> GetLast(int n)
         {
             var logs = await _context.Log
@@ -35,6 +36,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpGet("count")]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<int>> Count()
         {
             var total = await _context.Log.CountAsync();
