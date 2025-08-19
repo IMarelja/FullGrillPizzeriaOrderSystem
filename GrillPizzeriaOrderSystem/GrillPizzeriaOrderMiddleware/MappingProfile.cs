@@ -46,9 +46,6 @@ namespace GrillPizzeriaOrderMiddleware
             CreateMap<FoodCreateDto, Food>()
                 .ForMember(destination => destination.FoodAllergens, options => options.Ignore());
 
-            CreateMap<FoodUpdateDto, Food>()
-                .ForMember(destination => destination.FoodAllergens, options => options.Ignore());
-
             // FoodCategory
             CreateMap<FoodCategory, FoodCategoryReadDto>();
             CreateMap<FoodCategoryCreateDto, FoodCategory>();

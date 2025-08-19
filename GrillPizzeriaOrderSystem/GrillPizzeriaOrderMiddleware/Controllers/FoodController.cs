@@ -161,7 +161,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> Update(
             int id,
-            [FromBody] FoodUpdateDto dto,
+            [FromBody] FoodCreateDto dto,
             [FromServices] IAppLogger log)
         {
             if (!ModelState.IsValid)
