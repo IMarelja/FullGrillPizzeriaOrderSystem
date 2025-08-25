@@ -11,7 +11,6 @@ namespace DTO.Authentication
     public class LoginRequest
     {
         [Required]
-        [StringLength(ValidationConstants.NameMaxLength, ErrorMessage = "Username must not exceed 100 characters.")]
         public string Username { get; set; } = string.Empty;
 
         [Required]

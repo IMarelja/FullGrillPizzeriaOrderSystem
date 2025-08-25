@@ -49,5 +49,6 @@ namespace ViewModels
         [Display(Name = "Confirm Password")]
         [Compare("Password", ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
+        public string ReturnUrl { get; set; } = string.Empty;
     }
 }
