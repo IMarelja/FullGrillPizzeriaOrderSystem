@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using ModelConstants;
 
 namespace ViewModels
@@ -23,6 +24,7 @@ namespace ViewModels
         public decimal Price { get; set; }
         [StringLength(ValidationConstants.ImagePathMaxLength)]
         public string? ImagePath { get; set; }
+        public IFormFile? ImageFile { get; set; }
 
         [Required]
         public int FoodCategoryId { get; set; }
