@@ -1,0 +1,222 @@
+﻿@{
+    ViewData["Title"] = "Food Menu";
+    var menu = ViewBag.Food as List<ViewModels.FoodViewModel> ?? new List<ViewModels.FoodViewModel>();
+    var categories = ViewBag.Categories as List<ViewModels.CategoryFoodViewModel> ?? new List<ViewModels.CategoryFoodViewModel>();
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="text-center mb-4">Food Menu</h1>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="row mb-4">
+        <div class="col-md-8 mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search for food items...">
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <select id="categoryFilter" class="form-select">
+                <option value="">All Categories</option>
+                @foreach (var category in categories)
+                {
+                    <option value="@category.Id">@category.Name</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- Food Items Grid -->
+    <div class="row" id="foodGrid">
+        @foreach (var food in menu)
+        {
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4 food-item"
+                 data-name="@food.Name.ToLower()"
+                 data-category="@food.FoodCategoryName"
+                 data-id="@food.Id">
+                <div class="card h-100 shadow-sm">
+                    <!-- Food Image -->
+                    <div class="position-relative">
+                        @if (!string.IsNullOrEmpty(food.ImagePath))
+                        {
+                            <img src="@food.ImagePath" class="card-img-top food-image" alt="@food.Name" style="height: 200px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                                <i class="fas fa-utensils fa-3x text-muted"></i>
+                            </div>
+                        }
+
+                        <!-- Action Icons -->
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <button class="btn btn-sm btn-light rounded-circle me-1 edit-btn"
+                                    data-food-id="@food.Id"
+                                    title="Edit Food Item">
+                                <i class="fas fa-edit text-primary"></i>
+                            </button>
+                            <button class="btn btn-sm btn-success rounded-circle add-to-cart-btn"
+                                    data-food-id="@food.Id"
+                                    title="Add to Cart">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card Body -->
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">@food.Name</h5>
+                            <span class="badge bg-secondary">@food.FoodCategoryName</span>
+                        </div>
+
+                        <p class="card-text text-muted small flex-grow-1">@food.Description</p>
+
+                        <!-- Price -->
+                        <div class="mb-2">
+                            <span class="h4 text-success fw-bold">$@food.Price.ToString("F2")</span>
+                        </div>
+
+                        <!-- Allergens -->
+                        @if (food.AllergenNames != null && food.AllergenNames.Any())
+                        {
+                            <div class="mb-2">
+                                <small class="text-muted">Allergens:</small>
+                                <div class="mt-1">
+                                    @foreach (var allergen in food.AllergenNames)
+                                    {
+                                        <span class="badge bg-warning text-dark me-1 small">@allergen</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- No Results Message -->
+    <div id="noResults" class="row d-none">
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No food items found</h4>
+            <p class="text-muted">Try adjusting your search or filter criteria</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .food-item {
+        transition: transform 0.2s ease-in-out;
+    }
+
+        .food-item:hover {
+            transform: translateY(-2px);
+        }
+
+    .card {
+        transition: box-shadow 0.2s ease-in-out;
+    }
+
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+        }
+
+    .food-image {
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .card:hover .food-image {
+        transform: scale(1.05);
+    }
+
+    .btn {
+        transition: all 0.2s ease-in-out;
+    }
+
+        .btn:hover {
+            transform: scale(1.1);
+        }
+
+    .add-to-cart-btn:hover {
+        background-color: #198754 !important;
+        transform: scale(1.1);
+    }
+
+    .edit-btn:hover {
+        background-color: #f8f9fa !important;
+        transform: scale(1.1);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const foodItems = document.querySelectorAll('.food-item');
+        const noResults = document.getElementById('noResults');
+
+        function filterItems() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const selectedCategory = categoryFilter.value;
+            let visibleCount = 0;
+
+            foodItems.forEach(item => {
+                const foodName = item.getAttribute('data-name');
+                const foodCategory = item.getAttribute('data-category');
+
+                const matchesSearch = foodName.includes(searchTerm);
+                const matchesCategory = !selectedCategory || foodCategory === selectedCategory;
+
+                if (matchesSearch && matchesCategory) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Show/hide no results message
+            if (visibleCount === 0) {
+                noResults.classList.remove('d-none');
+            } else {
+                noResults.classList.add('d-none');
+            }
+        }
+
+        // Real-time search
+        searchInput.addEventListener('input', filterItems);
+        categoryFilter.addEventListener('change', filterItems);
+
+        // Add to cart functionality (placeholder)
+        document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const foodId = this.getAttribute('data-food-id');
+                // TODO: Implement add to cart functionality
+                console.log('Add to cart clicked for food ID:', foodId);
+
+                // Visual feedback
+                this.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    this.innerHTML = '<i class="fas fa-shopping-cart"></i>';
+                }, 1000);
+            });
+        });
+
+        // Edit functionality (placeholder)
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const foodId = this.getAttribute('data-food-id');
+                // TODO: Implement edit functionality
+                console.log('Edit clicked for food ID:', foodId);
+            });
+        });
+    });
+</script>
