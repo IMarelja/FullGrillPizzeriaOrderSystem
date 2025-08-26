@@ -67,6 +67,9 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             if (_context.User.Any(u => u.Email == registerUser.Email.Trim()))
                 return BadRequest("Email is already being used.");
 
+            if (_context.User.Any(u => u.Phone == registerUser.Phone.Trim()))
+                return BadRequest("Phone number is already being used.");
+
             var user = new User
             {
                 Username = registerUser.Username.Trim(),
