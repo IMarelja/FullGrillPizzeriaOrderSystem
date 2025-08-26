@@ -56,16 +56,17 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         public async Task<ActionResult<object>> Search(
             [FromServices] IAppLogger log,
             [FromQuery] string? q,
-            [FromQuery] int? categoryId,
+            [FromQuery] int? categoryId/*,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10
+            [FromQuery] int pageSize = 10*/
             )
         {
+            /*
             if (page < 1 || pageSize < 1 || pageSize > 100)
             {
                 await log.Error("Food.Search failed: Invalid paging parameters.");
                 return BadRequest("Invalid paging parameters.");
-            }
+            }*/
 
             var query = _context.Food
                 .Include(f => f.FoodCategory)
@@ -86,16 +87,12 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
             var items = await query
                 .OrderBy(f => f.Name)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
                 .ToListAsync();
 
             var dtos = _mapper.Map<IEnumerable<FoodReadDto>>(items);
 
             return Ok(new
             {
-                page,
-                pageSize,
                 total,
                 data = dtos
             });

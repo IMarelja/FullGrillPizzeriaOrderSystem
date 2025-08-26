@@ -54,7 +54,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // Read all
         [HttpGet]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<FoodCategoryReadDto>>> GetAll()
         {
             var entities = await _context.FoodCategory.ToListAsync();
@@ -64,7 +64,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         // Read one
         [HttpGet("{id}")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<FoodCategoryReadDto>> Get(int id)
         {
             var entity = await _context.FoodCategory.FindAsync(id);

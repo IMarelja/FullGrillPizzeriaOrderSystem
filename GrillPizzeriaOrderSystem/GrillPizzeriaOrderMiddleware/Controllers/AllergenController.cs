@@ -24,7 +24,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpGet]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<AllergenReadDto>>> GetAll()
         {
             var items = await _context.Allergen
@@ -35,7 +35,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<AllergenReadDto>> GetById(int id)
         {
             var entity = await _context.Allergen.FindAsync(id);
