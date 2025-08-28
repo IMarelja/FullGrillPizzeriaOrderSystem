@@ -13,7 +13,8 @@ namespace ViewModels
         public string Description { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public string? ImagePath { get; set; }
-        public string FoodCategoryName { get; set; } = string.Empty;
-        public List<string> AllergenNames { get; set; } = new();
+        public int FoodCategoryId { get; set; }
+        public CategoryFoodViewModel Category { get; set; } = new();
+        public List<AllergenViewModel> Allergens { get; set; } = new();
     }
 }

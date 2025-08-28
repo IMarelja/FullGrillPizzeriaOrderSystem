@@ -1,8 +1,10 @@
 ﻿@{
     ViewData["Title"] = "Food Menu";
-    var menu = ViewBag.Food as List<ViewModels.FoodViewModel> ?? new List<ViewModels.FoodViewModel>();
+    var menu = ViewBag.Foods as List<ViewModels.FoodViewModel> ?? new List<ViewModels.FoodViewModel>();
     var categories = ViewBag.Categories as List<ViewModels.CategoryFoodViewModel> ?? new List<ViewModels.CategoryFoodViewModel>();
 }
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=add_shopping_cart,search" />
 
 <div class="container-fluid">
     <div class="row mb-4">
@@ -11,8 +13,8 @@
         </div>
     </div>
 
-    <!-- Search and Filter Section -->
-    <div class="row mb-4">
+    <!-- Search, Filter and Send Section -->
+    <div class="row mb-2">
         <div class="col-md-8 mb-3">
             <div class="input-group">
                 <span class="input-group-text">
@@ -21,7 +23,7 @@
                 <input type="text" id="searchInput" class="form-control" placeholder="Search for food items...">
             </div>
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
             <select id="categoryFilter" class="form-select">
                 <option value="">All Categories</option>
                 @foreach (var category in categories)
@@ -30,15 +32,31 @@
                 }
             </select>
         </div>
+        <div class="col-md-1 mb-3 d-grid">
+            <button type="button" class="btn btn-primary">
+                <span class="material-symbols-outlined">search</span>
+            </button>
+        </div>
     </div>
 
-    <!-- Food Items Grid -->
+    <div class="row mb-4">
+        <button type="button" class="btn btn-primary"
+                onclick="document.getElementById('createFoodDialog').showModal();">
+            Add New Food
+        </button>
+        <button type="button" class="btn btn-danger" 
+            onclick="showDeleteAllergenDialog()">
+            Delete Allergen
+        </button>
+    </div>
+
+    <div id="partialViewContainer"></div>
+
     <div class="row" id="foodGrid">
         @foreach (var food in menu)
         {
             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4 food-item"
                  data-name="@food.Name.ToLower()"
-                 data-category="@food.FoodCategoryName"
                  data-id="@food.Id">
                 <div class="card h-100 shadow-sm">
                     <!-- Food Image -->
@@ -49,22 +67,33 @@
                         }
                         else
                         {
-                            <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
-                                <i class="fas fa-utensils fa-3x text-muted"></i>
-                            </div>
+                            <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;"></div>
                         }
 
                         <!-- Action Icons -->
+
+
                         <div class="position-absolute top-0 end-0 m-2">
-                            <button class="btn btn-sm btn-light rounded-circle me-1 edit-btn"
+                            <button class="btn btn-sm btn-light rounded-circle me-1"
                                     data-food-id="@food.Id"
                                     title="Edit Food Item">
-                                <i class="fas fa-edit text-primary"></i>
+                                <span>
+                                    edit
+                                </span>
                             </button>
-                            <button class="btn btn-sm btn-success rounded-circle add-to-cart-btn"
+                            <button class="btn btn-sm btn-light rounded-circle me-1"
+                                    data-food-id="@food.Id"
+                                    title="Delete Food Item">
+                                <span>
+                                    delete
+                                </span>
+                            </button>
+                            <button class="btn btn-sm btn-light rounded-circle"
                                     data-food-id="@food.Id"
                                     title="Add to Cart">
-                                <i class="fas fa-shopping-cart"></i>
+                                <span class="material-symbols-outlined">
+                                    add_shopping_cart
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -73,7 +102,7 @@
                     <div class="card-body d-flex flex-column">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <h5 class="card-title mb-0">@food.Name</h5>
-                            <span class="badge bg-secondary">@food.FoodCategoryName</span>
+                            <span class="badge bg-secondary">@food.Category.Name</span>
                         </div>
 
                         <p class="card-text text-muted small flex-grow-1">@food.Description</p>
@@ -84,15 +113,24 @@
                         </div>
 
                         <!-- Allergens -->
-                        @if (food.AllergenNames != null && food.AllergenNames.Any())
+                        @if (food.Allergens != null && food.Allergens.Any())
                         {
                             <div class="mb-2">
                                 <small class="text-muted">Allergens:</small>
                                 <div class="mt-1">
-                                    @foreach (var allergen in food.AllergenNames)
+                                    @foreach (var allergen in food.Allergens)
                                     {
-                                        <span class="badge bg-warning text-dark me-1 small">@allergen</span>
+                                        <span class="badge bg-warning text-dark me-1 small">@allergen.name</span>
                                     }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-2">
+                                <small class="text-muted">Allergens:</small>
+                                <div class="mt-1">
+                                    <span class="badge bg-info text-light me-1 small">None</span>
                                 </div>
                             </div>
                         }
@@ -101,15 +139,7 @@
             </div>
         }
     </div>
-
-    <!-- No Results Message -->
-    <div id="noResults" class="row d-none">
-        <div class="col-12 text-center py-5">
-            <i class="fas fa-search fa-3x text-muted mb-3"></i>
-            <h4 class="text-muted">No food items found</h4>
-            <p class="text-muted">Try adjusting your search or filter criteria</p>
-        </div>
-    </div>
+   
 </div>
 
 <style>
@@ -122,101 +152,85 @@
         }
 
     .card {
-        transition: box-shadow 0.2s ease-in-out;
+        transition: box-shadow 0.2s;
     }
 
-        .card:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
-        }
+    .card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+    }
 
     .food-image {
         transition: transform 0.2s ease-in-out;
     }
 
-    .card:hover .food-image {
-        transform: scale(1.05);
-    }
 
     .btn {
         transition: all 0.2s ease-in-out;
     }
 
-        .btn:hover {
-            transform: scale(1.1);
-        }
-
-    .add-to-cart-btn:hover {
-        background-color: #198754 !important;
+    .btn:hover {
         transform: scale(1.1);
     }
 
-    .edit-btn:hover {
-        background-color: #f8f9fa !important;
-        transform: scale(1.1);
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24
     }
+
 </style>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchInput');
-        const categoryFilter = document.getElementById('categoryFilter');
-        const foodItems = document.querySelectorAll('.food-item');
-        const noResults = document.getElementById('noResults');
 
-        function filterItems() {
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            const selectedCategory = categoryFilter.value;
-            let visibleCount = 0;
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize any page-specific functionality here
+        });
 
-            foodItems.forEach(item => {
-                const foodName = item.getAttribute('data-name');
-                const foodCategory = item.getAttribute('data-category');
+        function showDeleteAllergenDialog() {
+            showLoading(true);
 
-                const matchesSearch = foodName.includes(searchTerm);
-                const matchesCategory = !selectedCategory || foodCategory === selectedCategory;
-
-                if (matchesSearch && matchesCategory) {
-                    item.style.display = 'block';
-                    visibleCount++;
-                } else {
-                    item.style.display = 'none';
+            $.ajax({
+                url: '@Url.Action("DeleteAllergenDialog", "Menu")',
+                method: 'GET',
+                success: function(html) {
+                    showLoading(false);
+                    $('#partialViewContainer').html(html);
+                    $('#deleteAllergenModal').modal('show');
+                },
+                error: function(xhr, status, error) {
+                    showLoading(false);
+                    showAlert('Error loading delete dialog: ' + error, 'danger');
                 }
             });
+        }
 
-            // Show/hide no results message
-            if (visibleCount === 0) {
-                noResults.classList.remove('d-none');
+        function showLoading(show) {
+            if (show) {
+                $('#loadingSpinner').show();
             } else {
-                noResults.classList.add('d-none');
+                $('#loadingSpinner').hide();
             }
         }
 
-        // Real-time search
-        searchInput.addEventListener('input', filterItems);
-        categoryFilter.addEventListener('change', filterItems);
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
 
-        // Add to cart functionality (placeholder)
-        document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const foodId = this.getAttribute('data-food-id');
-                // TODO: Implement add to cart functionality
-                console.log('Add to cart clicked for food ID:', foodId);
+            // Remove existing alerts
+            $('.alert').remove();
 
-                // Visual feedback
-                this.innerHTML = '<i class="fas fa-check"></i>';
-                setTimeout(() => {
-                    this.innerHTML = '<i class="fas fa-shopping-cart"></i>';
-                }, 1000);
-            });
-        });
+            // Add new alert at the top of the page
+            $('body').prepend(alertHtml);
 
-        // Edit functionality (placeholder)
-        document.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const foodId = this.getAttribute('data-food-id');
-                // TODO: Implement edit functionality
-                console.log('Edit clicked for food ID:', foodId);
-            });
-        });
-    });
-</script>
+            // Auto-hide after 5 seconds
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
+        }
+    </script>
+}
+
+

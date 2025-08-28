@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DTO.Allergen;
+using DTO.FoodCategory;
 
 namespace DTO.Food
 {
@@ -13,8 +15,7 @@ namespace DTO.Food
         public string Description { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public string? ImagePath { get; set; }
-        public int FoodCategoryId { get; set; }
-        public string FoodCategoryName { get; set; } = string.Empty;
-        public List<string> AllergenNames { get; set; } = new();
+        public FoodCategoryReadDto Category { get; set; } = null!;
+        public List<AllergenReadDto> Allergens { get; set; } = new();
     }
 }

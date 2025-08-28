@@ -30,19 +30,6 @@ namespace GrillPizzeriaOrderMiddleware
             // Log 
             CreateMap<Log, LogReadDto>();
 
-            // Food
-            CreateMap<Food, FoodReadDto>()
-                .ForMember(destination => destination.FoodCategoryName,
-                            options => options.MapFrom(
-                                source => source.FoodCategory.Name
-                                )
-                            )
-                .ForMember(destination => destination.AllergenNames, 
-                            option => option.MapFrom(
-                                source => source.FoodAllergens.Select(fa => fa.Allergen.Name).ToList()
-                                )
-                            );
-
             CreateMap<FoodCreateDto, Food>()
                 .ForMember(destination => destination.FoodAllergens, options => options.Ignore());
 
@@ -54,6 +41,11 @@ namespace GrillPizzeriaOrderMiddleware
             CreateMap<Allergen, AllergenReadDto>();
             CreateMap<AllergenCreateDto, Allergen>();
 
+            // Food
+            CreateMap<Food, FoodReadDto>()
+            .ForMember(d => d.Category, o => o.MapFrom(s => s.FoodCategory))
+            .ForMember(d => d.Allergens, o => o.MapFrom(s => s.FoodAllergens.Select(fa => fa.Allergen)));
+
             // Read mapping for Order → OrderReadDto
             CreateMap<Order, OrderReadDto>()
                 .ForMember(d => d.Items, o => o.MapFrom(s => s.OrderFoods))
@@ -61,8 +53,7 @@ namespace GrillPizzeriaOrderMiddleware
 
             // Read mapping for OrderFood → OrderItemReadDto
             CreateMap<OrderFood, OrderItemReadDto>()
-                .ForMember(d => d.FoodId, o => o.MapFrom(s => s.FoodId))
-                .ForMember(d => d.FoodName, o => o.MapFrom(s => s.Food.Name))
+                .ForMember(d => d.Food, o => o.MapFrom(s => s.Food))
                 .ForMember(d => d.UnitPrice, o => o.MapFrom(s => s.Food.Price))
                 .ForMember(d => d.LineTotal, o => o.MapFrom(s => s.Quantity * s.Food.Price));
 
