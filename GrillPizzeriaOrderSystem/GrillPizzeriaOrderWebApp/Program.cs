@@ -1,7 +1,10 @@
 using System.Net.Http.Headers;
+using GrillPizzeriaOrderWebApp.Models;
 using GrillPizzeriaOrderWebApp.Services.APIs;
-using GrillPizzeriaOrderWebApp.Services.IAPIs;
+using GrillPizzeriaOrderWebApp.Services.IServices;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Options;
+using NuGet.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,22 +19,22 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("UserOnly", p => p.RequireRole("user", "admin"));
 });
 
+builder.Services.Configure<WebAPISettings>(builder.Configuration.GetSection("WebAPI"));
 
 // HttpClients per resource
-var baseUrl = builder.Configuration.GetValue<string>("WebAPI:BaseUrl");
 
-
-builder.Services.AddHttpClient("AuthenticationAPI", client =>
+builder.Services.AddHttpClient<IAuthenticationGrillService, AuthenticationRepository>((serviceProvider, client) =>
 {
-    client.BaseAddress = new Uri(baseUrl + "Authentication/");
-    client.DefaultRequestHeaders.Accept.Add(
-        new MediaTypeWithQualityHeaderValue("application/json"));
+    var webApiSettings = serviceProvider.GetRequiredService<IOptions<WebAPISettings>>().Value;
+    client.BaseAddress = new Uri(webApiSettings.BaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
-builder.Services.AddHttpClient("DataAPI", client =>
+
+builder.Services.AddHttpClient<IFoodService, FoodRepository>((serviceProvider, client) =>
 {
-    client.BaseAddress = new Uri(baseUrl);
-    client.DefaultRequestHeaders.Accept.Add(
-        new MediaTypeWithQualityHeaderValue("application/json"));
+    var apiSettings = serviceProvider.GetRequiredService<IOptions<WebAPISettings>>().Value;
+    client.BaseAddress = new Uri(apiSettings.BaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
 
@@ -45,7 +48,6 @@ builder.Services
         opts.LogoutPath = "/Authentication/Logout";
         opts.AccessDeniedPath = "/Authentication/AccessDenied";
     });
-
 
 var app = builder.Build();
 

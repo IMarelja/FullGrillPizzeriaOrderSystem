@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.WebUtilities;
 using ViewModels;
 
@@ -16,26 +17,119 @@ namespace GrillPizzeriaOrderWebApp.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string search, int? foodCategoryId)
         {
             var client = _http.CreateClient("DataAPI");
 
             List<FoodViewModel> foodList;
-            List<CategoryFoodViewModel> categoryFoodList;
+            List<CategoryFoodViewModel> usedCategoryFoodList;
+
+            var queryParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(search))
+                queryParams.Add($"q={Uri.EscapeDataString(search)}");
+            if (foodCategoryId.HasValue)
+                queryParams.Add($"categoryId={foodCategoryId.Value}");
+
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
 
             try
             {
-                var responceFoodAPI = await client.GetAsync("Food");
-                var responceFoodCategoryAPI = await client.GetAsync("FoodCategory");
+                var responseFoodAPI = await client.GetAsync($"Food/search{queryString}");
 
-                if (!responceFoodAPI.IsSuccessStatusCode || !responceFoodCategoryAPI.IsSuccessStatusCode)
+                var tempCategoryList = new List<CategoryFoodViewModel>();
+
+                if (!responseFoodAPI.IsSuccessStatusCode)
                     throw new Exception();
 
-                using var FoodJsonDocument = JsonDocument.Parse(await responceFoodAPI.Content.ReadAsStringAsync());
+                using var FoodJsonDocument = JsonDocument.Parse(await responseFoodAPI.Content.ReadAsStringAsync());
+
+                foodList = new List<FoodViewModel>();
+                usedCategoryFoodList = new List<CategoryFoodViewModel>();
+                foreach (var element in FoodJsonDocument.RootElement.EnumerateArray())
+                {
+                    var category = new CategoryFoodViewModel
+                    {
+                        Id = element.GetProperty("category").GetProperty("id").GetInt32(),
+                        Name = element.GetProperty("category").GetProperty("name").GetString() ?? string.Empty
+                    };
+
+                    var food = new FoodViewModel
+                    {
+                        Id = element.GetProperty("id").GetInt32(),
+                        Name = element.GetProperty("name").GetString() ?? string.Empty,
+                        Description = element.GetProperty("description").GetString() ?? string.Empty,
+                        Price = element.GetProperty("price").GetDecimal(),
+                        ImagePath = element.GetProperty("imagePath").GetString() ?? string.Empty,
+                        FoodCategoryId = element.GetProperty("foodCategoryId").GetInt32(),
+                        Category = category,
+                        Allergens = element.GetProperty("allergens")
+                           .EnumerateArray()
+                           .Select(a => new AllergenViewModel
+                           {
+                               id = a.GetProperty("id").GetInt32(),
+                               name = a.GetProperty("name").GetString() ?? string.Empty
+                           })
+                           .ToList()
+                    };
+                    foodList.Add(food);
+
+                    tempCategoryList.Add(category);
+
+                    usedCategoryFoodList = tempCategoryList
+                        .DistinctBy(c => c.Id)
+                        .ToList();
+                }
+
+            }
+            catch
+            {
+                usedCategoryFoodList = new List<CategoryFoodViewModel>();
+                foodList = new List<FoodViewModel>();
+            }
+
+            ViewBag.CurrentSearch = search;
+            ViewBag.CurrentCategoryId = foodCategoryId;
+            ViewBag.UsedCategories = new SelectList(
+                usedCategoryFoodList,
+                "Id",
+                "Name",
+                foodCategoryId
+            );
+
+            return View(foodList);
+        }
+        
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> FoodSearch(string? search, int? foodCategoryId)
+        {
+            var client = _http.CreateClient("DataAPI");
+
+            List<FoodViewModel> foodList;
+
+            var queryParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(search))
+                queryParams.Add($"q={Uri.EscapeDataString(search)}");
+            if (foodCategoryId.HasValue)
+                queryParams.Add($"categoryId={foodCategoryId.Value}");
+
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+
+            try
+            {
+                var responseFoodAPI = await client.GetAsync($"Food/search{queryString}");
+
+                var tempCategoryList = new List<CategoryFoodViewModel>();
+
+                if (!responseFoodAPI.IsSuccessStatusCode)
+                    throw new Exception();
+
+                using var FoodJsonDocument = JsonDocument.Parse(await responseFoodAPI.Content.ReadAsStringAsync());
 
                 foodList = new List<FoodViewModel>();
                 foreach (var element in FoodJsonDocument.RootElement.EnumerateArray())
                 {
+
                     var food = new FoodViewModel
                     {
                         Id = element.GetProperty("id").GetInt32(),
@@ -45,9 +139,9 @@ namespace GrillPizzeriaOrderWebApp.Controllers
                         ImagePath = element.GetProperty("imagePath").GetString() ?? string.Empty,
                         FoodCategoryId = element.GetProperty("foodCategoryId").GetInt32(),
                         Category = new CategoryFoodViewModel
-                        {  
-                            Id = element.GetProperty("category").GetProperty("id").GetInt32(), 
-                            Name = element.GetProperty("category").GetProperty("name").GetString() ?? string.Empty 
+                        {
+                            Id = element.GetProperty("category").GetProperty("id").GetInt32(),
+                            Name = element.GetProperty("category").GetProperty("name").GetString() ?? string.Empty
                         },
                         Allergens = element.GetProperty("allergens")
                            .EnumerateArray()
@@ -61,50 +155,13 @@ namespace GrillPizzeriaOrderWebApp.Controllers
                     foodList.Add(food);
                 }
 
-                using var FoodCategoryJsonDocument = JsonDocument.Parse(await responceFoodCategoryAPI.Content.ReadAsStringAsync());
-
-                categoryFoodList = new List<CategoryFoodViewModel>();
-                foreach (var element in FoodCategoryJsonDocument.RootElement.EnumerateArray())
-                {
-                    var foodCategory = new CategoryFoodViewModel
-                    {
-                        Id = element.GetProperty("id").GetInt32(),
-                        Name = element.GetProperty("name").GetString() ?? string.Empty,
-                    };
-                    categoryFoodList.Add(foodCategory);
-                }
-
             }
             catch
             {
-                categoryFoodList = new List<CategoryFoodViewModel>();
                 foodList = new List<FoodViewModel>();
             }
 
-            ViewBag.Categories = categoryFoodList;
-            ViewBag.Foods = foodList;
-
-            return View();
-        }
-        
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> Search(string? q, int? categoryId)
-        {
-            var client = _http.CreateClient("DataAPI");
-            var qs = new Dictionary<string, string?>();
-
-            if (!string.IsNullOrWhiteSpace(q)) qs["q"] = q;
-            if (categoryId.HasValue) qs["categoryId"] = categoryId.Value.ToString();
-
-            var url = QueryHelpers.AddQueryString("api/Food/search", qs); // -> http://.../api/Food/search?q=...&categoryId=...
-            var response = await client.GetAsync(url);
-
-            if (!response.IsSuccessStatusCode)
-                return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
-
-            var foods = await response.Content.ReadFromJsonAsync<List<FoodViewModel>>();
-            return PartialView("_FoodList", foods); // returns HTML snippet
+            return PartialView("_FoodListGrid", foodList);
         }
 
         [HttpGet]
