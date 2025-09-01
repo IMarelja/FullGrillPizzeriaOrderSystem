@@ -37,6 +37,19 @@ builder.Services.AddHttpClient<IFoodService, FoodRepository>((serviceProvider, c
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
+builder.Services.AddHttpClient<IFoodCategoryService, FoodCategoryRepository>((serviceProvider, client) =>
+{
+    var apiSettings = serviceProvider.GetRequiredService<IOptions<WebAPISettings>>().Value;
+    client.BaseAddress = new Uri(apiSettings.BaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+builder.Services.AddHttpClient<IAllergenService, AllergenRepository>((serviceProvider, client) =>
+{
+    var apiSettings = serviceProvider.GetRequiredService<IOptions<WebAPISettings>>().Value;
+    client.BaseAddress = new Uri(apiSettings.BaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 
 // Cookies authentication
 

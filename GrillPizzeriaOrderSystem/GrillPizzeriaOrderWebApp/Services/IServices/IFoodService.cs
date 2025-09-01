@@ -4,12 +4,14 @@ namespace GrillPizzeriaOrderWebApp.Services.IServices
 {
     public interface IFoodService
     {
-        Task<IEnumerable<FoodViewModel>> GetAll();
+        Task<IReadOnlyList<FoodViewModel>> GetAll();
         Task<FoodViewModel?> GetById(int id);
-        Task UpdateAsync(FoodEditViewModel food);
         Task CreateAsync(FoodCreateViewModel food);
+        Task UpdateAsync(FoodEditViewModel food);
         Task DeleteAsync(int id);
-        Task<IEnumerable<FoodViewModel>> GetByFilterSearch(string? search, int? genreId, int page, int pageSize);
+
+        Task<FoodSearchViewModel> SearchFilterAsync(string? search, int? categoryId);
+        Task<FoodSearchViewModel> SearchPageFilter(string? search, int? categoryId, int page, int pageSize);
 
     }
 }

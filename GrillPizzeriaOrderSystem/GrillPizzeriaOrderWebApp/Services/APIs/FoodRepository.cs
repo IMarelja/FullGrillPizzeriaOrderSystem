@@ -1,4 +1,7 @@
-﻿using GrillPizzeriaOrderWebApp.Services.IServices;
+﻿using System.Net;
+using System.Text.Json;
+using GrillPizzeriaOrderWebApp.Services.IServices;
+using Microsoft.AspNetCore.WebUtilities;
 using ViewModels;
 
 namespace GrillPizzeriaOrderWebApp.Services.APIs
@@ -7,42 +10,88 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
     {
         private readonly HttpClient _client;
         public const string EndPoint = "Food";
-
-        public FoodRepository(HttpClient client)
+        private static readonly JsonSerializerOptions _jsonOpts = new()
         {
-            _client = client;
-        }
+            PropertyNameCaseInsensitive = true
+        };
 
-        public async Task<IEnumerable<FoodViewModel>> GetAll()
+        public FoodRepository(HttpClient client) => _client = client;
+
+        public async Task<IReadOnlyList<FoodViewModel>> GetAll()
         {
             var response = await _client.GetAsync(EndPoint);
+            response.EnsureSuccessStatusCode();
 
-            return null;
+            using var stream = await response.Content.ReadAsStreamAsync();
+            var items = await JsonSerializer.DeserializeAsync<List<FoodViewModel>>(stream, _jsonOpts);
+            return items ?? new List<FoodViewModel>();
         }
 
-        public Task<FoodViewModel?> GetById(int id)
+        public async Task<FoodViewModel?> GetById(int id)
         {
-            throw new NotImplementedException();
+            var response = await _client.GetAsync($"{EndPoint}/{id}");
+            if (response.StatusCode == HttpStatusCode.NotFound) return null;
+            response.EnsureSuccessStatusCode();
+
+            using var stream = await response.Content.ReadAsStreamAsync();
+            return await JsonSerializer.DeserializeAsync<FoodViewModel>(stream, _jsonOpts);
         }
 
-        public Task UpdateAsync(FoodEditViewModel food)
+        public async Task CreateAsync(FoodCreateViewModel food)
         {
-            throw new NotImplementedException();
+            var response = await _client.PostAsJsonAsync(EndPoint, food, _jsonOpts);
+            response.EnsureSuccessStatusCode();
         }
 
-        public Task CreateAsync(FoodCreateViewModel food)
+        public async Task UpdateAsync(FoodEditViewModel food)
         {
-            throw new NotImplementedException();
+            var response = await _client.PutAsJsonAsync($"{EndPoint}/{food.id}", food, _jsonOpts);
+            response.EnsureSuccessStatusCode();
         }
 
-        public Task DeleteAsync(int id)
+        public async Task DeleteAsync(int id)
         {
-            throw new NotImplementedException();
+            var response = await _client.DeleteAsync($"{EndPoint}/{id}");
+            response.EnsureSuccessStatusCode();
         }
 
-        public Task<IEnumerable<FoodViewModel>> GetByFilterSearch(string? search, int? genreId, int page, int pageSize)
+        public async Task<FoodSearchViewModel> SearchFilterAsync(string? search, int? categoryId)
         {
-            throw new NotImplementedException();
+            var qs = new Dictionary<string, string?>();
+            if (!string.IsNullOrWhiteSpace(search)) qs["q"] = search;
+            if (categoryId.HasValue) qs["categoryId"] = categoryId.Value.ToString();
+
+            var url = QueryHelpers.AddQueryString($"{EndPoint}/search", qs!);
+
+            using var response = await _client.GetAsync(url);
+
+            response.EnsureSuccessStatusCode();
+
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            var result = await JsonSerializer.DeserializeAsync<FoodSearchViewModel>(stream, _jsonOpts);
+            return result;
+        }
+
+        public async Task<FoodSearchViewModel> SearchPageFilter(string? search, int? categoryId, int page, int pageSize)
+        {
+            var qs = new Dictionary<string, string?>
+            {
+                ["page"] = page.ToString(),
+                ["pageSize"] = pageSize.ToString()
+            };
+            if (!string.IsNullOrWhiteSpace(search)) qs["q"] = search.Trim();
+            if (categoryId.HasValue && categoryId.Value > 0) qs["categoryId"] = categoryId.Value.ToString();
+
+            var url = QueryHelpers.AddQueryString($"{EndPoint}/search", qs!);
+
+            using var response = await _client.GetAsync(url);
+
+            response.EnsureSuccessStatusCode();
+
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            var result = await JsonSerializer.DeserializeAsync<FoodSearchViewModel>(stream, _jsonOpts);
+            return result;
         }
     }
+
 }

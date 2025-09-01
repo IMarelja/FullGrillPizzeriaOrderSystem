@@ -68,7 +68,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                 using var doc = JsonDocument.Parse(profileRaw);
                 var root = doc.RootElement;
 
-                var userProfile = new UserProfile
+                var userProfile = new UserProfileAuthenticated
                 {
                     Id = root.GetProperty("id").GetInt32(),
                     Username = root.GetProperty("username").GetString() ?? string.Empty,
