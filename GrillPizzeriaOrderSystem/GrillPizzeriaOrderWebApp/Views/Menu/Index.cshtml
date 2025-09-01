@@ -30,46 +30,14 @@
         </div>
     </form>
 
+    <div id="adminMenuTools">
+        @await Html.PartialAsync("~/Views/Allergen/_Toolbar.cshtml")
+    </div>
+
     <div id="foodGridContainer" class="mt-3">
         <div class="text-muted">Loading…</div>
     </div>
 </div>
-
-<style>
-    .food-item {
-        transition: transform 0.2s ease-in-out;
-    }
-
-    .food-item:hover {
-        transform: translateY(-2px);
-    }
-
-    .card {
-        transition: box-shadow 0.2s;
-    }
-
-    .card:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
-    }
-
-    .food-image {
-        transition: transform 0.2s ease-in-out;
-    }
-
-
-    .btn {
-        transition: all 0.2s ease-in-out;
-    }
-
-    .btn:hover {
-        transform: scale(1.1);
-    }
-
-    .material-symbols-outlined {
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24
-    }
-
-</style>
 
 @section Scripts {
     <!--<script src="~/js/foodCategoryController.js"></script>-->
