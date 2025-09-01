@@ -8,13 +8,12 @@ namespace ViewModels
 {
     public class FoodViewModel
     {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public decimal Price { get; set; }
-        public string? ImagePath { get; set; }
-        public int FoodCategoryId { get; set; }
-        public CategoryFoodViewModel Category { get; set; } = new();
-        public List<AllergenViewModel> Allergens { get; set; } = new();
+        public int id { get; set; }
+        public string name { get; set; } = string.Empty;
+        public string description { get; set; } = string.Empty;
+        public decimal price { get; set; }
+        public string? imagePath { get; set; }
+        public CategoryFoodViewModel category { get; set; } = new();
+        public List<AllergenViewModel> allergens { get; set; } = new();
     }
 }

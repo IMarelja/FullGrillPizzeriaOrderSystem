@@ -12,12 +12,12 @@ namespace ViewModels
     {
         [Required]
         [StringLength(ValidationConstants.NameMaxLength)]
-        public string Name { get; set; } = string.Empty;
+        public string name { get; set; } = string.Empty;
     }
 
     public class AllergenEditViewModel : AllergenCreateViewModel
     {
         [Required]
-        public int Id { get; set; }
+        public int id { get; set; }
     }
 }
