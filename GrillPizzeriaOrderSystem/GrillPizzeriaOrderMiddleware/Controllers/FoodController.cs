@@ -59,32 +59,46 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             [FromQuery] int? categoryId,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10
-            )
+        )
         {
-            
             if (page < 1 || pageSize < 1 || pageSize > 100)
             {
-                await log.Error("Food.Search failed: Invalid paging parameters.");
+                await log.Error($"Food.Search failed: Invalid paging parameters. page={page}, pageSize={pageSize}");
                 return BadRequest("Invalid paging parameters.");
             }
 
+            // Base query
             var query = _context.Food
+                .AsNoTracking()
                 .Include(f => f.FoodCategory)
                 .Include(f => f.FoodAllergens).ThenInclude(fa => fa.Allergen)
                 .AsQueryable();
 
+            // Search (case-insensitive LIKE)
             if (!string.IsNullOrWhiteSpace(q))
             {
-                query = query.Where(f => f.Name.Contains(q) || f.Description.Contains(q));
+                var pattern = $"%{q.Trim()}%";
+                query = query.Where(f =>
+                    EF.Functions.Like(f.Name, pattern) ||
+                    EF.Functions.Like(f.Description!, pattern));
             }
 
+            // Category filter
             if (categoryId.HasValue)
             {
                 query = query.Where(f => f.FoodCategoryId == categoryId.Value);
             }
 
+            // Count first
             var total = await query.CountAsync();
 
+            // Compute totalPages (0 when no results)
+            var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+
+            // Deterministic ordering for stable pagination
+            query = query.OrderBy(f => f.Name).ThenBy(f => f.Id);
+
+            // Page slice
             var items = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -92,14 +106,20 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
             var dtos = _mapper.Map<IEnumerable<FoodReadDto>>(items);
 
-            await log.Information($"Searched food with filters (name={q}, categoryId={categoryId}), page={page}, count={pageSize}.");
+            await log.Information(
+                $"Food.Search filters (q={q ?? "null"}, categoryId={categoryId?.ToString() ?? "null"}), page={page}, pageSize={pageSize}, total={total}, totalPages={totalPages}");
 
             return Ok(new
             {
                 total,
+                currentPage = page,
+                currentPageSize = dtos.Count(),
+                pageSize,
+                totalPages,
                 data = dtos
             });
         }
+
 
         // POST: api/food
         [HttpPost]
