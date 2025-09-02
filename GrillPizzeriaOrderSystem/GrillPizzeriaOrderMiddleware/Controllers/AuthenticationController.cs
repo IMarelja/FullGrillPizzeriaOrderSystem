@@ -8,6 +8,7 @@ using GrillPizzeriaOrderMiddleware.Services.AppLogging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
@@ -31,97 +32,134 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginUser, [FromServices] IAppLogger log)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var user = await _context.User
+                    .Include(u => u.Role)
+                    .FirstOrDefaultAsync(u =>
+                        u.Username == loginUser.Username.Trim() &&
+                        u.PasswordHash == Hashing.sha256(loginUser.Password));
+
+                if (user == null)
+                {
+                    await log.Error($"Authentication.Login: Invalid credentials from {loginUser.Username}");
+                    return Unauthorized("Invalid credentials.");
+                }
+
+                string token = GenerateJwtToken(user);
+                await log.Information($"Authentication.Login: Logged in user id={user.Id}, role={user.Role.Name}.");
+                return Ok(new { token });
             }
-
-            var user = await _context.User
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u =>
-                    u.Username == loginUser.Username.Trim() &&
-                    u.PasswordHash == Hashing.sha256(loginUser.Password));
-
-            if (user == null) {
-                await log.Error($"Authentication.Login: Invalid credentials from {loginUser.Username}");
-                return Unauthorized("Invalid credentials.");
+            catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
+            {
+                return StatusCode(503, "Authentication.Login, database connection error: " + ex.Message);
             }
-
-            string token = GenerateJwtToken(user);
-            await log.Information($"Authentication.Login: Logged in user id={user.Id}, role={user.Role.Name}.");
-            return Ok(new { token });
+            catch (Exception ex)
+            {
+                await log.Error($"Authentication.Login failed: {ex.Message}");
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest registerUser, [FromServices] IAppLogger log)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+
+                if (_context.User.Any(u => u.Username == registerUser.Username.Trim()))
+                    return BadRequest("Username is already being used.");
+
+                if (_context.User.Any(u => u.Email == registerUser.Email.Trim()))
+                    return BadRequest("Email is already being used.");
+
+                if (_context.User.Any(u => u.Phone == registerUser.Phone.Trim()))
+                    return BadRequest("Phone number is already being used.");
+
+                var user = new User
+                {
+                    Username = registerUser.Username.Trim(),
+                    PasswordHash = Hashing.sha256(registerUser.Password),
+                    Email = registerUser.Email.Trim(),
+                    FirstName = registerUser.FirstName.Trim(),
+                    LastName = registerUser.LastName.Trim(),
+                    Phone = registerUser.Phone.Trim(),
+                    CreationDate = DateTime.Now,
+                    RoleId = _context.Role.First(r => r.Name == "user").Id
+                };
+
+                _context.User.Add(user);
+                await _context.SaveChangesAsync();
+
+                await log.Information($"Authentication.Register: Registered user id={user.Id}, role={user.Role.Name}.");
+                return Ok("User registered successfully.");
             }
-                
-
-            if (_context.User.Any(u => u.Username == registerUser.Username.Trim()))
-                return BadRequest("Username is already being used.");
-
-            if (_context.User.Any(u => u.Email == registerUser.Email.Trim()))
-                return BadRequest("Email is already being used.");
-
-            if (_context.User.Any(u => u.Phone == registerUser.Phone.Trim()))
-                return BadRequest("Phone number is already being used.");
-
-            var user = new User
+            catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
-                Username = registerUser.Username.Trim(),
-                PasswordHash = Hashing.sha256(registerUser.Password),
-                Email = registerUser.Email.Trim(),
-                FirstName = registerUser.FirstName.Trim(),
-                LastName = registerUser.LastName.Trim(),
-                Phone = registerUser.Phone.Trim(),
-                CreationDate = DateTime.Now,
-                RoleId = _context.Role.First(r => r.Name == "user").Id
-            };
-
-            _context.User.Add(user);
-            await _context.SaveChangesAsync();
-
-            await log.Information($"Authentication.Register: Registered user id={user.Id}, role={user.Role.Name}.");
-            return Ok("User registered successfully.");
+                return StatusCode(503, "Authentication.Register, database connection error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                await log.Error($"Authentication.Register failed: {ex.Message}");
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
 
         [HttpPost("changepassword")]
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest changePassword, [FromServices] IAppLogger log)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            string? sid = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (sid == null || !int.TryParse(sid, out var userId))
-                return Unauthorized();
-
-            var user = await _context.User.FindAsync(userId);
-            var oldPassword = Hashing.sha256(changePassword.OldPassword);
-            var newPassword = Hashing.sha256(changePassword.NewPassword);
-
-            if (user == null)
+            try
             {
-                await log.Information($"Authentication.ChangePassword: User not found id={user.Id}");
-                return NotFound("User not found.");
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                string? sid = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (sid == null || !int.TryParse(sid, out var userId))
+                    return Unauthorized();
+
+                var user = await _context.User.FindAsync(userId);
+                var oldPassword = Hashing.sha256(changePassword.OldPassword);
+                var newPassword = Hashing.sha256(changePassword.NewPassword);
+
+                if (user == null)
+                {
+                    await log.Information($"Authentication.ChangePassword: User not found id={user.Id}");
+                    return NotFound("User not found.");
+                }
+
+                if (user.PasswordHash != oldPassword)
+                    return BadRequest("Old password is incorrect.");
+
+                if (oldPassword == newPassword)
+                    return BadRequest("Old and new passwords are the same");
+
+                user.PasswordHash = newPassword;
+                await _context.SaveChangesAsync();
+
+                await log.Information($"Authentication.ChangePassword: Changed password user id={user.Id}");
+
+                return Ok("Password successfully changed");
             }
-
-            if (user.PasswordHash != oldPassword)
-                return BadRequest("Old password is incorrect.");
-
-            if (oldPassword == newPassword)
-                return BadRequest("Old and new passwords are the same");
-
-            user.PasswordHash = newPassword;
-            await _context.SaveChangesAsync();
-
-            await log.Information($"Authentication.ChangePassword: Changed password user id={user.Id}");
-
-            return Ok("Password successfully changed");
+            catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
+            {
+                return StatusCode(503, "Authentication.ChangePassword, database connection error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                await log.Error($"Authentication.ChangePassword failed: {ex.Message}");
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
 
         private string GenerateJwtToken(User user)

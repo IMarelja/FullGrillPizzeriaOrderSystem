@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using DTO.Log;
 using GrillPizzeriaOrderMiddleware.DatabaseContexts;
+using GrillPizzeriaOrderMiddleware.Services.AppLogging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Models;
 
@@ -24,23 +26,47 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
         [HttpGet("get/{n}")]
         [Authorize(Roles = "admin")]
-        public async Task<ActionResult<IEnumerable<LogReadDto>>> GetLast(int n)
+        public async Task<ActionResult<IEnumerable<LogReadDto>>> GetLast(int n, [FromServices] IAppLogger log)
         {
-            var logs = await _context.Log
-                .OrderByDescending(l => l.Timestamp)
-                .Take(n)
-                .ToListAsync();
+            try
+            {
+                var logs = await _context.Log
+                        .OrderByDescending(l => l.Timestamp)
+                        .Take(n)
+                        .ToListAsync();
 
-            var dtos = _mapper.Map<IEnumerable<LogReadDto>>(logs);
-            return Ok(dtos);
+                var dtos = _mapper.Map<IEnumerable<LogReadDto>>(logs);
+                return Ok(dtos);
+            }
+            catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
+            {
+                return StatusCode(503, "Log.GetLast, database connection error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                await log.Error($"Log.GetLast failed: {ex.Message}");
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
 
         [HttpGet("count")]
         [Authorize(Roles = "admin")]
-        public async Task<ActionResult<int>> Count()
+        public async Task<ActionResult<int>> Count([FromServices] IAppLogger log)
         {
-            var total = await _context.Log.CountAsync();
-            return Ok(total);
+            try
+            {
+                var total = await _context.Log.CountAsync();
+                return Ok(total);
+            }
+            catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
+            {
+                return StatusCode(503, "Log.Count, database connection error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                await log.Error($"Log.Count failed: {ex.Message}");
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
         }
     }
 }
