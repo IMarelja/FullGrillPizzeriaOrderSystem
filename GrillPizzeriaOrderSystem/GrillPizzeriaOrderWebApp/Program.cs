@@ -3,6 +3,7 @@ using GrillPizzeriaOrderWebApp.Models;
 using GrillPizzeriaOrderWebApp.Services.APIs;
 using GrillPizzeriaOrderWebApp.Services.IServices;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using NuGet.Configuration;
 
@@ -20,6 +21,10 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.Configure<WebAPISettings>(builder.Configuration.GetSection("WebAPI"));
+
+
+// Register IHttpContextAccessor to access current user's token
+builder.Services.AddHttpContextAccessor();
 
 // HttpClients per resource
 
@@ -49,6 +54,22 @@ builder.Services.AddHttpClient<IAllergenService, AllergenRepository>((servicePro
     var apiSettings = serviceProvider.GetRequiredService<IOptions<WebAPISettings>>().Value;
     client.BaseAddress = new Uri(apiSettings.BaseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+builder.Services.AddHttpClient<IUserService, UserRepository>((serviceProvider, client) =>
+{
+    var apiSettings = serviceProvider.GetRequiredService<IOptions<WebAPISettings>>().Value;
+    client.BaseAddress = new Uri(apiSettings.BaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+
+});
+
+builder.Services.AddHttpClient<ILogService, LogRepository>((serviceProvider, client) =>
+{
+    var apiSettings = serviceProvider.GetRequiredService<IOptions<WebAPISettings>>().Value;
+    client.BaseAddress = new Uri(apiSettings.BaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+
 });
 
 // Cookies authentication

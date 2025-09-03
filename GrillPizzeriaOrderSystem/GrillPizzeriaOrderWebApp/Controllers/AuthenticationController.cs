@@ -1,12 +1,14 @@
 ﻿using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
+using GrillPizzeriaOrderWebApp.Models;
 using GrillPizzeriaOrderWebApp.Services.IServices;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+using NuGet.Common;
 using ViewModels;
 
 namespace GrillPizzeriaOrderWebApp.Controllers
@@ -33,19 +35,27 @@ namespace GrillPizzeriaOrderWebApp.Controllers
         if (!ModelState.IsValid)
             return View(loginUser);
 
-            var result = await _authenticationService.LoginAsync(loginUser);
+        var result = await _authenticationService.LoginAsync(loginUser);
 
         if (!result.Success)
         {
-            ModelState.AddModelError(string.Empty, result.ErrorMessage);
+            ModelState.AddModelError(string.Empty, result.Message);
             return View(loginUser);
         }
 
+        Response.Cookies.Append("AuthToken", result.Token, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,   // send only over HTTPS
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTimeOffset.UtcNow.AddHours(1)
+        });
+
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, result.UserProfile.Id.ToString()),
-            new Claim(ClaimTypes.Name, result.UserProfile.Username),
-            new Claim(ClaimTypes.Role, result.UserProfile.RoleName),
+            new Claim(ClaimTypes.NameIdentifier, result.UserProfile.id.ToString()),
+            new Claim(ClaimTypes.Name, result.UserProfile.username),
+            new Claim(ClaimTypes.Role, result.UserProfile.roleName),
             new Claim("JWT", result.Token)
         };
 
@@ -55,10 +65,10 @@ namespace GrillPizzeriaOrderWebApp.Controllers
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity),
             new AuthenticationProperties { IsPersistent = loginUser.RememberMe });
-
+        
         if (string.IsNullOrEmpty(loginUser.ReturnUrl) || !Url.IsLocalUrl(loginUser.ReturnUrl))
             return RedirectToAction("Index", "Home");
-
+        
         return LocalRedirect(loginUser.ReturnUrl);
     }
 
@@ -79,7 +89,7 @@ namespace GrillPizzeriaOrderWebApp.Controllers
 
         if (!result.Success)
         {
-            ModelState.AddModelError(string.Empty, result.ErrorMessage);
+            ModelState.AddModelError(string.Empty, result.Message);
             return View(registerUser);
         }
 
@@ -87,30 +97,30 @@ namespace GrillPizzeriaOrderWebApp.Controllers
     }
 
     [HttpGet]
-    [Authorize]
-    public IActionResult ChangePassword() => View(new ChangePasswordViewModel());
+    [Authorize(Policy = "UserOnly")]
+    public IActionResult _ChangePassword() => PartialView();
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = "UserOnly")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel request)
+    public async Task<IActionResult> _ChangePassword(ChangePasswordViewModel request)
     {
         if (!ModelState.IsValid)
-            return View(request);
+        {
+            AuthenticationResult badState = new AuthenticationResult
+            {
+                Success = false,
+                Message = "Invalid model state"
+            };
+
+            return PartialView(badState);
+        }
 
         var result = await _authenticationService.ChangePasswordAsync(request);
 
-        if (!result.Success)
-        {
-            ModelState.AddModelError(string.Empty, result.ErrorMessage);
-            return View(request);
-        }
-
-        TempData["SuccessMessage"] = "Password changed successfully.";
-        return RedirectToAction("Index", "Home");
+        return PartialView(result);
     }
 
-    [HttpGet]
     [AllowAnonymous]
     public IActionResult AccessDenied() => View();
 

@@ -129,8 +129,6 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                     return Unauthorized();
 
                 var user = await _context.User.FindAsync(userId);
-                var oldPassword = Hashing.sha256(changePassword.OldPassword);
-                var newPassword = Hashing.sha256(changePassword.NewPassword);
 
                 if (user == null)
                 {
@@ -138,11 +136,16 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                     return NotFound("User not found.");
                 }
 
-                if (user.PasswordHash != oldPassword)
-                    return BadRequest("Old password is incorrect.");
+                var oldPassword = Hashing.sha256(changePassword.CurrentPassword);                
 
-                if (oldPassword == newPassword)
-                    return BadRequest("Old and new passwords are the same");
+                if (user.PasswordHash != oldPassword)
+                    return BadRequest("Current password is incorrect.");
+
+                var newPassword = Hashing.sha256(changePassword.NewPassword);
+                var confirmNewPassword = Hashing.sha256(changePassword.ConfirmNewPassword);
+
+                if (confirmNewPassword != newPassword)
+                    return BadRequest("New passwords aren't the same");
 
                 user.PasswordHash = newPassword;
                 await _context.SaveChangesAsync();
@@ -175,7 +178,6 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name,           user.Username),
-                new Claim(ClaimTypes.Email,          user.Email),
                 new Claim(ClaimTypes.Role,           user.Role.Name)
             };
 

@@ -20,55 +20,43 @@ namespace GrillPizzeriaOrderWebApp.Controllers
         {
             return View();
         }
-        /*
+
         [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetAllergens()
+        public IActionResult CreateDiagram()
         {
-            var client = _http.CreateClient("DataAPI");
-
-            var responceAllergenAPI = await client.GetAsync("Allergen");
-
-            try
-            {
-
-
-                if (!responceAllergenAPI.IsSuccessStatusCode)
-                    return Json(new { error = "Failed to fetch allergens" });
-
-                var content = await responceAllergenAPI.Content.ReadAsStringAsync();
-                var allergens = JsonSerializer.Deserialize<List<AllergenViewModel>>(content, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-                return Json(allergens);
-
-
-            }
-            catch (Exception ex)
-            {
-                return Json(new { error = ex.Message });
-            }
+            return View("_CreateAllergenDiagram");
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllDropDown()
+        {
+            var response = await _allergenService.GetAll();
+
+            return PartialView("_AllergenDropdown", response);
+        }
+
+        public IActionResult Create()
+            => PartialView("_CreateAllergenDialog", new AllergenCreateViewModel());
+
+        [HttpGet]
+        public async Task<IActionResult> Create(AllergenCreateViewModel allergen)
+        {
+            if (!ModelState.IsValid)
+                return PartialView("_CreateAllergenDialog", allergen);
+
+            var response = await _allergenService.CreateAsync(allergen);
+
+            return PartialView("_CreateAllergenDialog", response);
+        }
+
+        public IActionResult Delete()
+            => PartialView("_DeleteAllergenDialog", 0);
 
         [HttpDelete]
-        [AllowAnonymous]
-        public async Task<IActionResult> DeleteAllergen(int id)
+        public async Task<IActionResult> Delete(int n)
         {
-            var client = _http.CreateClient("DataAPI");
-            var responseAllergenAPI = await client.DeleteAsync($"Allergen/{id}");
-            try
-            {
-                if (!responseAllergenAPI.IsSuccessStatusCode)
-                    return Json(new { success = false, error = "Failed to delete allergen" });
-
-                return Json(new { success = true, message = "Allergen deleted successfully" });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, error = ex.Message });
-            }
+            var response = await _allergenService.DeleteAsync(n);
+            return PartialView("_DeleteAllergenDialog", response);
         }
-        */
     }
 }

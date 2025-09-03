@@ -1,4 +1,5 @@
-﻿using ViewModels;
+﻿using GrillPizzeriaOrderWebApp.Models;
+using ViewModels;
 
 namespace GrillPizzeriaOrderWebApp.Services.IServices
 {
@@ -6,8 +7,8 @@ namespace GrillPizzeriaOrderWebApp.Services.IServices
     {
         Task<IEnumerable<AllergenViewModel>> GetAll();
         Task<AllergenViewModel?> GetById(int id);
-        Task UpdateAsync(AllergenEditViewModel food);
-        Task CreateAsync(AllergenCreateViewModel food);
-        Task DeleteAsync(int id);
+        Task<ApiOperationResult<int>> CreateAsync(AllergenCreateViewModel food);
+        Task<ApiOperationResult> UpdateAsync(AllergenEditViewModel food);
+        Task<ApiOperationResult> DeleteAsync(int id);
     }
 }

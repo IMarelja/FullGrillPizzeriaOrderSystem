@@ -1,0 +1,50 @@
+﻿@model IReadOnlyList<ViewModels.LogViewModel>
+
+<table class="table table-sm table-striped table-hover mb-0">
+    <thead class="table-light">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Timestamp</th>
+            <th scope="col">Level</th>
+            <th scope="col">Message</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model == null || !Model.Any())
+        {
+            <tr>
+                <td colspan="6" class="text-muted p-3">No logs.</td>
+            </tr>
+        }
+        else
+        {
+            foreach (var log in Model)
+            {
+                <tr>
+                    <td>@log.Id</td>
+                    <td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>
+                        <span class="badge @GetLevelClass(log.Level)">@log.Level</span>
+                    </td>
+                    <td class="text-break">@log.Message</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@functions {
+    private string GetLevelClass(string level)
+    {
+        if (string.IsNullOrWhiteSpace(level)) return "bg-secondary-subtle text-secondary";
+        switch (level.ToLowerInvariant())
+        {
+            case "error": return "bg-danger-subtle text-danger";
+            case "warn":
+            case "warning": return "bg-warning-subtle text-warning";
+            case "info": return "bg-info-subtle text-info";
+            case "debug": return "bg-secondary-subtle text-secondary";
+            default: return "bg-primary-subtle text-primary";
+        }
+    }
+}

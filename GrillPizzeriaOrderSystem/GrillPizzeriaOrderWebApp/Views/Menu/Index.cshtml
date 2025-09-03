@@ -52,11 +52,6 @@
         
         function LoadFoodGrid(query, foodCategoryId, page = 1, pageSize = 10) {
 
-            console.log("query: ", query);
-			console.log("foodCategoryId: ", foodCategoryId);
-            console.log("page: ", page);
-			console.log("pageSize: ", pageSize);
-
             $foodGridTarget.html('<div class="text-muted">Loading…</div>');
 
             $.ajax({

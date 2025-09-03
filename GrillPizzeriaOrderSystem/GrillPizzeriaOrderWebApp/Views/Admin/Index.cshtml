@@ -1,0 +1,96 @@
+﻿@{
+    ViewData["Title"] = "Logs";
+}
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
+<div class="container mt-3">
+    <div class="row g-3 align-items-start">
+        <!-- Left: Controls + Table -->
+        <div class="col-lg-9">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="material-icons-outlined">list</span>
+                        <strong>Logs</strong>
+                    </div>
+
+                    <form id="logForm" class="d-flex align-items-center gap-2" method="get" action="@Url.Action("GetLogs", "Admin")">
+                        <label for="number" class="form-label mb-0">#</label>
+                        <input id="number" name="number" type="number" min="1" step="1" class="form-control form-control-sm" style="width: 110px;" value="50" />
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Load
+                        </button>
+                    </form>
+                </div>
+
+                <div class="card-body p-0">
+                    <div id="logsContainer">
+                        <div class="p-3 text-muted">Loading…</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Count -->
+        <div class="col-lg-3">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex align-items-center">
+                    <p class="mb-0">Total Log Count</p>
+                </div>
+                <div class="card-body">
+                    <div id="logCountContainer" class="display-6 text-center text-primary">…</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        // Initial load
+        $(function () {
+            loadLogs($('#number').val() || 50);
+            loadLogCount();
+        });
+
+        // Handle form submit via AJAX
+        $('#logForm').on('submit', function (e) {
+            e.preventDefault();
+            const num = parseInt($('#number').val(), 10) || 50;
+            loadLogs(num);
+        });
+
+        function loadLogs(number) {
+            $('#logsContainer').html('<div class="p-3 text-muted">Loading…</div>');
+            $.ajax({
+                url: '@Url.Action("GetLogs", "Admin")',
+                type: 'GET',
+                data: { number: number },
+                cache: false,
+                success: function (html) {
+                    $('#logsContainer').html(html);
+                },
+                error: function () {
+                    $('#logsContainer').html('<div class="p-3 text-danger">Failed to load logs.</div>');
+                }
+            });
+        }
+
+        function loadLogCount() {
+            $('#logCountContainer').text('…');
+            $.ajax({
+                url: '@Url.Action("GetLogCount", "Admin")',
+                type: 'GET',
+                cache: false,
+                success: function (html) {
+                    $('#logCountContainer').html(html);
+                },
+                error: function () {
+                    $('#logCountContainer').html('<div class="text-danger">Failed to load count.</div>');
+                }
+            });
+        }
+    </script>
+}

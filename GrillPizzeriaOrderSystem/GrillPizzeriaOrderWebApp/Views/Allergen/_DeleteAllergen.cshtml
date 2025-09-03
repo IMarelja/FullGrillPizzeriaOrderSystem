@@ -1,0 +1,31 @@
+﻿<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
+<form method="dialog" class="delete-dialog">
+    <h2>Delete Allergen</h2>
+    <div id="allergenListDropdown" class="col-md-4">
+        @Html.Partial("_AllergenDropDown")
+    </div>
+    <a class="btn btn-danger d-flex justify-content-center align-items-center"
+        title="Delete selected" onclick="deleteSelectedAllergen()">
+        <span class="material-icons-outlined">delete</span>
+    </a>
+    
+</form>
+
+@section Scripts {
+    <script type="module">
+        function deleteSelectedAllergen() {
+            const selectedValue = $('select[name="allergenId"]').val();
+            if (!selectedValue) {
+                alert('Please select an allergen to delete');
+                return;
+            }
+
+            console.log('Selected allergen ID:', selectedValue);
+            // Example: call your delete API
+            // deleteAllergen(selectedValue);
+        }
+
+        window.deleteSelectedAllergen = deleteSelectedAllergen;
+    </script>
+}

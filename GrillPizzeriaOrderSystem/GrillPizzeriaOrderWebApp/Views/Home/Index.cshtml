@@ -1,8 +1,30 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+
+<div class="container">
+    <div class="row align-items-center g-0 hero-row">
+        <!-- Image block (mockup-style card) -->
+        <div class="col-12 col-lg-6 hero-media">
+            <div class="hero-media-card">
+                <img src="/images/hero-pizza-grill.png" alt="Fresh pizza and grill" class="img-fluid hero-img" />
+            </div>
+        </div>
+
+        <!-- Text block -->
+        <div class="col-12 col-lg-6 hero-copy">
+            <h1 class="display-5 fw-semibold mb-3">Grill &amp; Pizzeria</h1>
+            <p class="lead text-muted mb-4">
+                A warm oven, fresh ingredients and fast delivery. From pizza from a wood-fired oven and homemade burgers to barbecue with side dishes — order in just a few clicks.
+            </p>
+            <div class="d-flex gap-2 flex-wrap">
+                <a class="btn btn-primary btn-lg px-4" asp-area="" asp-controller="Menu" asp-action="Index">🍕 Look at the menu</a>
+            </div>
+            <div class="small text-muted mt-3">
+                *Allergens are clearly marked with each dish.
+            </div>
+        </div>
+    </div>
 </div>

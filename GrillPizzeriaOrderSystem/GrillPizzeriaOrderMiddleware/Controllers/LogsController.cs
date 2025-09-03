@@ -12,7 +12,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "admin")]
+    
     public class LogsController : ControllerBase
     {
         private readonly GrillPizzaDatabaseContext _context;

@@ -9,13 +9,18 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
     public class FoodRepository : IFoodService
     {
         private readonly HttpClient _client;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         public const string EndPoint = "Food";
         private static readonly JsonSerializerOptions _jsonOpts = new()
         {
             PropertyNameCaseInsensitive = true
         };
 
-        public FoodRepository(HttpClient client) => _client = client;
+        public FoodRepository(HttpClient client, IHttpContextAccessor httpContextAccessor)
+        {
+            _client = client;
+            _httpContextAccessor = httpContextAccessor;
+        }
 
         public async Task<IReadOnlyList<FoodViewModel>> GetAll()
         {
@@ -39,18 +44,42 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
 
         public async Task CreateAsync(FoodCreateViewModel food)
         {
+            var token = _httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
             var response = await _client.PostAsJsonAsync(EndPoint, food, _jsonOpts);
             response.EnsureSuccessStatusCode();
         }
 
         public async Task UpdateAsync(FoodEditViewModel food)
         {
+            var token = _httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
             var response = await _client.PutAsJsonAsync($"{EndPoint}/{food.id}", food, _jsonOpts);
             response.EnsureSuccessStatusCode();
         }
 
         public async Task DeleteAsync(int id)
         {
+            var token = _httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                _client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
             var response = await _client.DeleteAsync($"{EndPoint}/{id}");
             response.EnsureSuccessStatusCode();
         }

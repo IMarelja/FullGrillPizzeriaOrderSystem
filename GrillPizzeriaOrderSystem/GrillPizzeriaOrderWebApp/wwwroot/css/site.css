@@ -20,3 +20,51 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* --- Homepage (hero) --- */
+.hero-wrap {
+    background: linear-gradient(90deg, #bdbdbd 0 22%, transparent 22%) /* left wide bar */, linear-gradient(90deg, #d9d9d9 22%, transparent 22%); /* subtle overlay */
+    padding: 3.5rem 0;
+}
+
+@media (min-width: 992px) {
+    .hero-wrap {
+        padding: 5rem 0;
+    }
+}
+
+.hero-row {
+    min-height: 320px;
+}
+
+.hero-media {
+    padding: 1.5rem;
+}
+
+.hero-media-card {
+    background: #fef0de;
+    border-radius: .5rem;
+    padding: 2rem;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,.06);
+}
+
+.hero-img {
+    max-height: 280px;
+    object-fit: cover;
+    border-radius: .35rem;
+    filter: saturate(0.9) contrast(1.02);
+}
+
+.hero-copy {
+    padding: 2rem;
+}
+
+/* --- Steps --- */
+.step-card {
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: .75rem;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,.05);
+}

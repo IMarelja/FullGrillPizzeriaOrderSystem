@@ -33,7 +33,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                     return new AuthenticationResult
                     {
                         Success = false,
-                        ErrorMessage = $"Login failed {(int)authResp.StatusCode}: {authRaw}",
+                        Message = $"Login failed {(int)authResp.StatusCode}: {authRaw}",
                         StatusCode = (int)authResp.StatusCode
                     };
                 }
@@ -46,7 +46,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                     return new AuthenticationResult
                     {
                         Success = false,
-                        ErrorMessage = "Invalid login response."
+                        Message = "Invalid login response."
                     };
                 }
 
@@ -59,7 +59,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                     return new AuthenticationResult
                     {
                         Success = false,
-                        ErrorMessage = $"Failed to load profile: {profileResp.StatusCode}",
+                        Message = $"Failed to load profile: {profileResp.StatusCode}",
                         StatusCode = (int)profileResp.StatusCode
                     };
                 }
@@ -68,11 +68,11 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                 using var doc = JsonDocument.Parse(profileRaw);
                 var root = doc.RootElement;
 
-                var userProfile = new UserProfileAuthenticated
+                var userProfile = new UserViewModel
                 {
-                    Id = root.GetProperty("id").GetInt32(),
-                    Username = root.GetProperty("username").GetString() ?? string.Empty,
-                    RoleName = root.GetProperty("roleName").GetString() ?? string.Empty
+                    id = root.GetProperty("id").GetInt32(),
+                    username = root.GetProperty("username").GetString() ?? string.Empty,
+                    roleName = root.GetProperty("roleName").GetString() ?? string.Empty
                 };
 
                 return new AuthenticationResult
@@ -87,7 +87,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                 return new AuthenticationResult
                 {
                     Success = false,
-                    ErrorMessage = $"An error occurred during login: {ex.Message}"
+                    Message = $"An error occurred during login: {ex.Message}"
                 };
             }
         }
@@ -114,7 +114,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                     return new AuthenticationResult
                     {
                         Success = false,
-                        ErrorMessage = $"Registration failed {(int)resp.StatusCode}: {raw}",
+                        Message = $"Registration failed {(int)resp.StatusCode}: {raw}",
                         StatusCode = (int)resp.StatusCode
                     };
                 }
@@ -129,7 +129,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                 return new AuthenticationResult
                 {
                     Success = false,
-                    ErrorMessage = $"An error occurred during registration: {ex.Message}"
+                    Message = $"An error occurred during registration: {ex.Message}"
                 };
             }
         }
@@ -141,7 +141,8 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                 var resp = await _client.PostAsJsonAsync($"{EndPoint}/changepassword", new
                 {
                     request.CurrentPassword,
-                    request.NewPassword
+                    request.NewPassword,
+                    request.ConfirmNewPassword
                 });
 
                 var raw = await resp.Content.ReadAsStringAsync();
@@ -151,14 +152,15 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                     return new AuthenticationResult
                     {
                         Success = false,
-                        ErrorMessage = $"Password change failed {(int)resp.StatusCode}: {raw}",
+                        Message = $"Password change failed {(int)resp.StatusCode}: {raw}",
                         StatusCode = (int)resp.StatusCode
                     };
                 }
 
                 return new AuthenticationResult
                 {
-                    Success = true
+                    Success = true,
+                    Message = "Password changed successfully."
                 };
             }
             catch (Exception ex)
@@ -166,7 +168,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                 return new AuthenticationResult
                 {
                     Success = false,
-                    ErrorMessage = $"An error occurred during password change: {ex.Message}"
+                    Message = $"An error occurred during password change: {ex.Message}"
                 };
             }
         }

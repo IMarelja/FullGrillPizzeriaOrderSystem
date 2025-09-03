@@ -8,11 +8,12 @@
 
   <ItemGroup>
     <Folder Include="Views\Layout\" />
-    <Folder Include="Views\Admin\" />
+    <Folder Include="Views\FoodCategory\" />
     <Folder Include="wwwroot\images\" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
   </ItemGroup>
 
