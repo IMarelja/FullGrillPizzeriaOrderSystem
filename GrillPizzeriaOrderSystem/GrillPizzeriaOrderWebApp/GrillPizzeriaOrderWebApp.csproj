@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <Folder Include="Views\Layout\" />
-    <Folder Include="Views\FoodCategory\" />
     <Folder Include="wwwroot\images\" />
   </ItemGroup>
 
