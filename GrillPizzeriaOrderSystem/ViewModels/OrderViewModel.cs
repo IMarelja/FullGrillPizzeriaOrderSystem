@@ -8,9 +8,7 @@ namespace ViewModels
 {
     public class OrderItemViewModel
     {
-        public int FoodId { get; set; }
-        public string FoodName { get; set; } = string.Empty;
-        public decimal UnitPrice { get; set; }
+        public FoodViewModel Food { get; set; } = new();
         public int Quantity { get; set; }
         public decimal LineTotal { get; set; }
     }
@@ -19,8 +17,6 @@ namespace ViewModels
     {
         public int Id { get; set; }
         public DateTime OrderDate { get; set; }
-        public string Username { get; set; } = string.Empty;
-
         public List<OrderItemViewModel> Items { get; set; } = new();
         public decimal OrderTotalPrice { get; set; }
     }

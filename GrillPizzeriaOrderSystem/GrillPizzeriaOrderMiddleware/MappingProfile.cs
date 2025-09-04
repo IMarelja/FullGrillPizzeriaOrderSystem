@@ -54,7 +54,6 @@ namespace GrillPizzeriaOrderMiddleware
             // Read mapping for OrderFood → OrderItemReadDto
             CreateMap<OrderFood, OrderItemReadDto>()
                 .ForMember(d => d.Food, o => o.MapFrom(s => s.Food))
-                .ForMember(d => d.UnitPrice, o => o.MapFrom(s => s.Food.Price))
                 .ForMember(d => d.LineTotal, o => o.MapFrom(s => s.Quantity * s.Food.Price));
 
             // Create mapping: OrderItemCreateDto → OrderFood
