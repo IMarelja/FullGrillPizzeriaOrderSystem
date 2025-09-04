@@ -16,4 +16,9 @@ namespace ViewModels
         public CategoryFoodViewModel category { get; set; } = new();
         public List<AllergenViewModel> allergens { get; set; } = new();
     }
+
+    public class FoodDeleteViewModel
+    {
+        public int id { get; set; }
+    }
 }

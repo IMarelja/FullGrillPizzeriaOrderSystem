@@ -24,4 +24,9 @@ namespace ViewModels
         public List<OrderItemViewModel> Items { get; set; } = new();
         public decimal OrderTotalPrice { get; set; }
     }
+
+    public class OrderDeleteViewModel
+    {
+        public int id { get; set; }
+    }
 }

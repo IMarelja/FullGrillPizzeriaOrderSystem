@@ -61,20 +61,19 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
 
             var response = await _client.PostAsJsonAsync(EndPoint, allergen);
 
-            if (response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
-                using var stream = await response.Content.ReadAsStreamAsync();
-                var vm = await JsonSerializer.DeserializeAsync<AllergenViewModel>(stream, _jsonOpts);
-
-                if (vm is null)
-                    return ApiOperationResult<int>.Fail("Empty response from server.");
-
-                return ApiOperationResult<int>.Ok(vm.id, "Allergen created successfully.");
+                string raw = await response.Content.ReadAsStringAsync();
+                return ApiOperationResult<int>.Fail($"Create failed ({(int)response.StatusCode}): {raw}");
             }
 
-            // handle errors
-            string raw = await response.Content.ReadAsStringAsync();
-            return ApiOperationResult<int>.Fail($"Create failed ({(int)response.StatusCode}): {raw}");
+            using var stream = await response.Content.ReadAsStreamAsync();
+            var vm = await JsonSerializer.DeserializeAsync<AllergenViewModel>(stream, _jsonOpts);
+
+            if (vm is null)
+                return ApiOperationResult<int>.Fail("Empty response from server.");
+
+            return ApiOperationResult<int>.Ok(vm.id, "Allergen created successfully.");
         }
 
         public async Task<ApiOperationResult> UpdateAsync(AllergenEditViewModel allergen)
@@ -89,14 +88,16 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
 
             var response = await _client.PutAsJsonAsync($"{EndPoint}/{allergen.id}", allergen);
 
-            if (response.IsSuccessStatusCode)
-                return ApiOperationResult.Ok("Allergen updated successfully.");
-
-            string raw = await response.Content.ReadAsStringAsync();
-            return ApiOperationResult.Fail($"Update failed ({(int)response.StatusCode}): {raw}");
+            if (!response.IsSuccessStatusCode)
+            {
+                string raw = await response.Content.ReadAsStringAsync();
+                return ApiOperationResult.Fail($"Update failed ({(int)response.StatusCode}): {raw}");
+            }
+            
+            return ApiOperationResult.Ok("Allergen updated successfully.");
         }
 
-        public async Task<ApiOperationResult> DeleteAsync(int id)
+        public async Task<ApiOperationResult> DeleteAsync(AllergenDeleteViewModel allergen)
         {
             var token = _httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
 
@@ -106,13 +107,15 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             }
 
-            var response = await _client.DeleteAsync($"{EndPoint}/{id}");
+            var response = await _client.DeleteAsync($"{EndPoint}/{allergen.id}");
 
-            if (response.IsSuccessStatusCode)
-                return ApiOperationResult.Ok("Allergen deleted successfully.");
-
-            string raw = await response.Content.ReadAsStringAsync();
-            return ApiOperationResult.Fail($"Delete failed ({(int)response.StatusCode}): {raw}");
+            if (!response.IsSuccessStatusCode)
+            {
+                string raw = await response.Content.ReadAsStringAsync();
+                return ApiOperationResult.Fail($"Delete failed ({(int)response.StatusCode}): {raw}");
+            }
+            
+            return ApiOperationResult.Ok("Allergen deleted successfully.");
         }
     }
 }

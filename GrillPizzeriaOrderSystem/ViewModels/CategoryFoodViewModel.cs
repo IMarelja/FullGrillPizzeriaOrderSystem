@@ -11,4 +11,9 @@ namespace ViewModels
         public int id { get; set; }
         public string name { get; set; } = string.Empty;
     }
+
+    public class CategoryFoodDeleteViewModel
+    {
+        public int id { get; set; }
+    }
 }

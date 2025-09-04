@@ -7,8 +7,8 @@ namespace GrillPizzeriaOrderWebApp.Services.IServices
     {
         Task<IEnumerable<AllergenViewModel>> GetAll();
         Task<AllergenViewModel?> GetById(int id);
-        Task<ApiOperationResult<int>> CreateAsync(AllergenCreateViewModel food);
-        Task<ApiOperationResult> UpdateAsync(AllergenEditViewModel food);
-        Task<ApiOperationResult> DeleteAsync(int id);
+        Task<ApiOperationResult<int>> CreateAsync(AllergenCreateViewModel allergen);
+        Task<ApiOperationResult> UpdateAsync(AllergenEditViewModel allergen);
+        Task<ApiOperationResult> DeleteAsync(AllergenDeleteViewModel allergen);
     }
 }

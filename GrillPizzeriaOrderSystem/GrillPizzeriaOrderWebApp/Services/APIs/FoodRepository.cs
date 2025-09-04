@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Text.Json;
+using GrillPizzeriaOrderWebApp.Models;
 using GrillPizzeriaOrderWebApp.Services.IServices;
 using Microsoft.AspNetCore.WebUtilities;
 using ViewModels;
@@ -42,7 +43,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
             return await JsonSerializer.DeserializeAsync<FoodViewModel>(stream, _jsonOpts);
         }
 
-        public async Task CreateAsync(FoodCreateViewModel food)
+        public async Task<ApiOperationResult<int>> CreateAsync(FoodCreateViewModel food)
         {
             var token = _httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
 
@@ -52,11 +53,24 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             }
 
-            var response = await _client.PostAsJsonAsync(EndPoint, food, _jsonOpts);
-            response.EnsureSuccessStatusCode();
+            var response = await _client.PostAsJsonAsync(EndPoint, food);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                string raw = await response.Content.ReadAsStringAsync();
+                return ApiOperationResult<int>.Fail($"Create failed ({(int)response.StatusCode}): {raw}");
+            }
+
+            using var stream = await response.Content.ReadAsStreamAsync();
+            var vm = await JsonSerializer.DeserializeAsync<FoodViewModel>(stream, _jsonOpts);
+
+            if (vm is null)
+                return ApiOperationResult<int>.Fail("Empty response from server.");
+
+            return ApiOperationResult<int>.Ok(vm.id, "Food created successfully.");
         }
 
-        public async Task UpdateAsync(FoodEditViewModel food)
+        public async Task<ApiOperationResult> UpdateAsync(FoodEditViewModel food)
         {
             var token = _httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
 
@@ -66,11 +80,18 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             }
 
-            var response = await _client.PutAsJsonAsync($"{EndPoint}/{food.id}", food, _jsonOpts);
-            response.EnsureSuccessStatusCode();
+            var response = await _client.PutAsJsonAsync($"{EndPoint}/{food.id}", food);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                string raw = await response.Content.ReadAsStringAsync();
+                return ApiOperationResult.Fail($"Update failed ({(int)response.StatusCode}): {raw}");
+            }
+
+            return ApiOperationResult.Ok("Food category updated successfully.");
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<ApiOperationResult> DeleteAsync(FoodDeleteViewModel food)
         {
             var token = _httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
 
@@ -80,8 +101,15 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             }
 
-            var response = await _client.DeleteAsync($"{EndPoint}/{id}");
-            response.EnsureSuccessStatusCode();
+            var response = await _client.DeleteAsync($"{EndPoint}/{food.id}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                string raw = await response.Content.ReadAsStringAsync();
+                return ApiOperationResult.Fail($"Delete failed ({(int)response.StatusCode}): {raw}");
+            }
+
+            return ApiOperationResult.Ok("Food deleted successfully.");
         }
 
         public async Task<FoodSearchViewModel> SearchFilterAsync(string? search, int? categoryId)
