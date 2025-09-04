@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Reflection;
+using System.Text.Json;
+using GrillPizzeriaOrderWebApp.Models;
 using GrillPizzeriaOrderWebApp.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,47 +18,84 @@ namespace GrillPizzeriaOrderWebApp.Controllers
             _allergenService = allergenService;
         }
 
+        [Authorize(Policy = "AdminOnly")]
         public IActionResult Index()
         {
             return View();
         }
 
-        [HttpGet]
-        public IActionResult CreateDiagram()
-        {
-            return View("_CreateAllergenDiagram");
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAllDropDown()
-        {
-            var response = await _allergenService.GetAll();
-
-            return PartialView("_AllergenDropdown", response);
-        }
-
-        public IActionResult Create()
-            => PartialView("_CreateAllergenDialog", new AllergenCreateViewModel());
-
-        [HttpGet]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Create(AllergenCreateViewModel allergen)
         {
             if (!ModelState.IsValid)
-                return PartialView("_CreateAllergenDialog", allergen);
+            {
+                var message = ApiOperationResult.Fail("Creation validation error.");
+                return View("~/Views/Allergen/Index.cshtml", message);
+            }
 
             var response = await _allergenService.CreateAsync(allergen);
 
-            return PartialView("_CreateAllergenDialog", response);
+            return View("~/Views/Allergen/Index.cshtml", response);
         }
 
-        public IActionResult Delete()
-            => PartialView("_DeleteAllergenDialog", 0);
-
-        [HttpDelete]
-        public async Task<IActionResult> Delete(int n)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> Edit(AllergenEditViewModel allergen)
         {
-            var response = await _allergenService.DeleteAsync(n);
-            return PartialView("_DeleteAllergenDialog", response);
+            if (!ModelState.IsValid)
+            {
+                var message = ApiOperationResult.Fail("Editing validation error.");
+                return View("~/Views/Allergen/Index.cshtml", message);
+            }
+
+            var response = await _allergenService.UpdateAsync(allergen);
+
+            return View("~/Views/Allergen/Index.cshtml", response);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> Delete(AllergenDeleteViewModel allergen)
+        {
+            if (!ModelState.IsValid)
+            {
+                var message = ApiOperationResult.Fail("Deletion validation error.");
+                return View("~/Views/Allergen/Index.cshtml", message);
+            }
+
+            var response = await _allergenService.DeleteAsync(allergen);
+
+            return View("~/Views/Allergen/Index.cshtml", response);
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        [Produces("application/json")]
+        public async Task<IActionResult> GetAll()
+        {
+            try
+            {
+                var allergens = await _allergenService.GetAll();
+
+                return Ok(new
+                {
+                    success = true,
+                    data = allergens,
+                    message = "Food categories loaded successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    success = false,
+                    message = "Error loading food categories: " + ex.Message
+                });
+            }
         }
     }
 }

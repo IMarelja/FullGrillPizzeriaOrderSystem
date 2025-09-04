@@ -1,0 +1,17 @@
+﻿@model ViewModels.AllergenCreateViewModel
+
+<div class="card-body">
+    <form asp-controller="Allergen" asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label asp-for="name" class="form-label">Name</label>
+            <input asp-for="name" type="text" class="form-control" placeholder="Enter allergen name" />
+            <span asp-validation-for="name" class="text-danger"></span>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Create
+            </button>
+        </div>
+    </form>
+</div>

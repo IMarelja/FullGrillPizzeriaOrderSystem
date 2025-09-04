@@ -1,5 +1,96 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model ApiOperationResult?
 @{
+        ViewData["Title"] = "Allergens Management";
+}
+@if (Model != null)
+{
+    <div>
+        @if (Model.Succeeded)
+        {
+            <div class="alert alert-success" role="alert">
+                @Model.Message
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-danger" role="alert">
+                @Model.Message 
+                @foreach(var error in Model.Errors)
+                {
+                    @error 
+				}
+            </div>
+        }
+    </div>
+}
+<div>
+	<h1>Add Allergen</h1>
+</div>
+<partial name="_AllergenCreateForm" model="new ViewModels.AllergenCreateViewModel()" />
+
+<div>
+    <h1>Edit Allergen</h1>
+</div>
+<partial name="_AllergenEditForm" model="new ViewModels.AllergenEditViewModel()" />
+
+<div>
+	<h1>Delete Allergen</h1>
+</div>
+<partial name="_AllergenDeleteForm" model="new ViewModels.AllergenDeleteViewModel()" />
+
+
+
+@section Scripts {
+    <script type="text/javascript">
+
+        const $dropDownsSelected = document.querySelectorAll('.allergenListDropdown');
+
+        $(document).ready(function () {
+
+            LoadAllergens();
+
+            $('#editSelect').on('change', function () {
+                $('#editSelectHiddenId').val($(this).val());
+            });
+
+            $('#deleteSelect').on('change', function () {
+                $('#deleteSelectHiddenId').val($(this).val());
+			});
+        });
+
+        function LoadAllergens(){
+            $.ajax({
+                type: "GET",
+                url: '/Allergen/GetAll',
+                dataType: "json",
+                cache: true,
+                success: function (response) {
+                    if (response.success) {
+                        var allergen = response.data;
+                        console.log('Allergens loaded:', allergen);
+                        renderAllergenAsDropdown(allergen);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    alert('AJAX: Error loading allergens');
+                }
+            });
+        }
+
+        function renderAllergenAsDropdown(allergens) {
+            var html = '<option value="0">Select an Allergen</option>';
+            allergens.forEach(function(allergen) {
+                html += `<option value="${allergen.id}">${allergen.name}</option>`;
+            });
+
+            $dropDownsSelected.forEach(function(select) {
+                select.innerHTML = html;
+            });
+        }
+
+        
+    </script>
 }

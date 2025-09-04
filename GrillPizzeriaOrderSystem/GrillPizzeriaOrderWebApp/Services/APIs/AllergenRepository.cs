@@ -48,7 +48,6 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
             return await JsonSerializer.DeserializeAsync<AllergenViewModel>(stream, _jsonOpts);
         }
 
-        // requires authentication
         public async Task<ApiOperationResult<int>> CreateAsync(AllergenCreateViewModel allergen)
         {
             var token = _httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
