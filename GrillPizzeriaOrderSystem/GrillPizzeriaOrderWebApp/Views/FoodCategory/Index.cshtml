@@ -1,0 +1,96 @@
+﻿@model ApiOperationResult?
+@{
+    ViewData["Title"] = "Food Category Management";
+}
+@if (Model != null)
+{
+    <div>
+        @if (Model.Succeeded)
+        {
+            <div class="alert alert-success" role="alert">
+                @Model.Message
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-danger" role="alert">
+                @Model.Message 
+                @foreach(var error in Model.Errors)
+                {
+                    @error 
+				}
+            </div>
+        }
+    </div>
+}
+<div>
+    <h1>Add Food Category</h1>
+</div>
+<partial name="_FoodCategoryCreateForm" model="new ViewModels.CategoryFoodCreateViewModel()" />
+
+<div>
+    <h1>Edit Food Category</h1>
+</div>
+<partial name="_FoodCategoryEditForm" model="new ViewModels.CategoryFoodEditViewModel()" />
+
+<div>
+    <h1>Delete Food Category</h1>
+</div>
+<partial name="_FoodCategoryDeleteForm" model="new ViewModels.CategoryFoodDeleteViewModel()" />
+
+
+
+@section Scripts {
+    <script type="text/javascript">
+
+        const $dropDownsSelected = document.querySelectorAll('.foodCategoryListDropdown');
+
+        $(document).ready(function () {
+
+            LoadAllergens();
+
+            $('#editSelect').on('change', function () {
+                $('#editSelectHiddenId').val($(this).val());
+            });
+
+            $('#deleteSelect').on('change', function () {
+                $('#deleteSelectHiddenId').val($(this).val());
+			});
+        });
+
+        function LoadAllergens(){
+            $.ajax({
+                type: "GET",
+                url: '/FoodCategory/GetAll',
+                dataType: "json",
+                cache: true,
+                success: function (response) {
+                    if (response.success) {
+                        var foodcategories = response.data;
+                        console.log('FoodCategories loaded:', foodcategories);
+                        renderFoodCategoryAsDropdown(foodcategories);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    alert('AJAX: Error loading FoodCategories');
+                }
+            });
+        }
+
+        function renderFoodCategoryAsDropdown(foodcategories) {
+            var html = '<option value="0">Select an Food Category</option>';
+            foodcategories.forEach(function(foodcategory) {
+                html += `<option value="${foodcategory.id}">${foodcategory.name}</option>`;
+            });
+
+            $dropDownsSelected.forEach(function(select) {
+                select.innerHTML = html;
+            });
+        }
+
+        
+    </script>
+}

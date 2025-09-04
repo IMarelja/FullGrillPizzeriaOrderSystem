@@ -1,6 +1,8 @@
-﻿using GrillPizzeriaOrderWebApp.Services.IServices;
+﻿using GrillPizzeriaOrderWebApp.Models;
+using GrillPizzeriaOrderWebApp.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ViewModels;
 
 namespace GrillPizzeriaOrderWebApp.Controllers
 {
@@ -11,6 +13,60 @@ namespace GrillPizzeriaOrderWebApp.Controllers
         public FoodCategoryController(IFoodCategoryService foodCategoryService)
         {
             _foodCategoryService = foodCategoryService;
+        }
+
+        [Authorize(Policy = "AdminOnly")]
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> Create(CategoryFoodCreateViewModel category)
+        {
+            if (!ModelState.IsValid)
+            {
+                var message = ApiOperationResult.Fail("Creation validation error.");
+                return View("~/Views/FoodCategory/Index.cshtml", message);
+            }
+
+            var response = await _foodCategoryService.CreateAsync(category);
+
+            return View("~/Views/FoodCategory/Index.cshtml", response);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> Edit(CategoryFoodEditViewModel category)
+        {
+            if (!ModelState.IsValid)
+            {
+                var message = ApiOperationResult.Fail("Editing validation error.");
+                return View("~/Views/FoodCategory/Index.cshtml", message);
+            }
+
+            var response = await _foodCategoryService.UpdateAsync(category);
+
+            return View("~/Views/FoodCategory/Index.cshtml", response);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> Delete(CategoryFoodDeleteViewModel category)
+        {
+            if (!ModelState.IsValid)
+            {
+                var message = ApiOperationResult.Fail("Deletion validation error.");
+                return View("~/Views/FoodCategory/Index.cshtml", message);
+            }
+
+            var response = await _foodCategoryService.DeleteAsync(category);
+
+            return View("~/Views/FoodCategory/Index.cshtml", response);
         }
 
         [HttpGet]
