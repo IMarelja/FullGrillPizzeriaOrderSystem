@@ -52,7 +52,7 @@
         const $confirmNewPasswordInput = $('#ConfirmNewPassword');
 
 		// Message box for feedback
-        const messageBox = document.getElementById('messageForPasswordAndInfo');
+        const $messageBox = document.getElementById('messageForPasswordAndInfo');
 
         $(document).ready(function () {
 
@@ -76,9 +76,9 @@
         
 
         function showMessage(text, isSuccess) {
-            messageBox.classList.remove("visually-hidden", "alert-success", "alert-danger");
-            messageBox.classList.add(isSuccess ? "alert-success" : "alert-danger");
-            messageBox.textContent = text;
+            $messageBox.classList.remove("visually-hidden", "alert-success", "alert-danger");
+            $messageBox.classList.add(isSuccess ? "alert-success" : "alert-danger");
+            $messageBox.textContent = text;
         }
         
         function ChangePasswordCall() {
@@ -102,7 +102,6 @@
                 },
                 error: function (xhr, status, err) {
                     console.log('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
-                    console.log('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
 
                     try {
                         // try parse JSON from 400 response
@@ -114,13 +113,13 @@
                                 .map(e => e.field + ": " + e.errors.join("\n"))
                                 .join(" | ");
 
-                            showMessage(allErrors, false);
+                            $showMessage(allErrors, false);
                         } else {
-                            showMessage(response.message || "Validation failed.", false);
+                            $showMessage(response.message || "Validation failed.", false);
                         }
                     } catch (parseErr) {
                         // fallback if response wasn’t JSON
-                        showMessage("AJAX: Error updating the password.", false);
+                        $showMessage("AJAX: Error updating the password.", false);
                     }
                 }
             });

@@ -1,5 +1,236 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using Microsoft.AspNetCore.Antiforgery
 @{
+    ViewData["Title"] = "Edit food";
+}
+
+
+<div id="messageForFoodInfo" class="alert visually-hidden" role="alert"></div>
+
+<div id="editDialog" class="p-4 rounded shadow-lg">
+    <form id="formEditFood" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <h3 class="mb-3">Edit Food Item</h3>
+
+        <div class="mb-3">
+            <label class="form-label" for="name">Name</label>
+            <input id="name" name="name" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="description">Description</label>
+            <textarea id="description" name="description" class="form-control"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="price">Price</label>
+            <input id="price" name="price" type="number" step="0.01" inputmode="decimal" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="foodCategorySelect">Select a category</label>
+            <select id="foodCategorySelect" class="foodCategoryListDropdown form-select">
+                <option value="0">Select a Category</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Select Allergens</label>
+            <div id="allergenCheckboxContainer"></div>
+        </div>
+
+        <button id="pushTheNewFood" class="mb-3 btn btn-info">Edit food</button>
+    </form>
+</div>
+
+
+@section Scripts {
+    <script type="text/javascript">
+
+        const $formEditFood = document.querySelectorAll('.editDialog');
+        const $dropDownsFoodCategorySelected = document.querySelectorAll('.foodCategoryListDropdown');
+
+        const messageBox = document.getElementById('messageForFoodInfo');
+
+        $(document).ready(function () {
+
+            LoadFoodCategory();
+            LoadAllergens();
+
+            $('#foodCategorySelect').on('change', function () {
+                $('#editSelectFoodCategoryHiddenId').val($(this).val());
+            });
+
+            $("#pushTheNewFood").click(function(e) {
+                e.preventDefault();
+                EditNewFood();
+            });
+
+            LoadEditableFood();
+        });
+
+        function LoadEditableFood(){
+            $.ajax({
+                type: "GET",
+                url: '/Food/GetById',
+                dataType: "json",
+                data: {
+                    id=@ViewData["FoodId"]
+                },
+                cache: true,
+                success: function (response) {
+                    if (response.success) {
+                        var foodcategories = response.data;
+                        console.log('FoodCategories loaded:', foodcategories);
+                        renderFoodCategoryAsDropdown(foodcategories);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    alert('AJAX: Error loading FoodCategories');
+                }
+            });
+        }
+
+        function showMessage(text, isSuccess) {
+            messageBox.classList.remove('visually-hidden', 'alert-success', 'alert-danger');
+            messageBox.classList.add(isSuccess ? 'alert-success' : 'alert-danger');
+            messageBox.textContent = text;
+        }
+
+        function LoadFoodCategory(){
+            $.ajax({
+                type: "GET",
+                url: '/FoodCategory/GetAll',
+                dataType: "json",
+                cache: true,
+                success: function (response) {
+                    if (response.success) {
+                        var foodcategories = response.data;
+                        console.log('FoodCategories loaded:', foodcategories);
+                        renderFoodCategoryAsDropdown(foodcategories);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    alert('AJAX: Error loading FoodCategories');
+                }
+            });
+        }
+
+        function renderFoodCategoryAsDropdown(foodcategories) {
+            var html = '<option value="0">Select an Food Category</option>';
+            foodcategories.forEach(function(foodcategory) {
+                html += `<option value="${foodcategory.id}">${foodcategory.name}</option>`;
+            });
+
+            $dropDownsFoodCategorySelected.forEach(function(select) {
+                select.innerHTML = html;
+            });
+        }
+
+        function LoadAllergens(){
+            $.ajax({
+                type: "GET",
+                url: '/Allergen/GetAll',
+                dataType: "json",
+                cache: true,
+                success: function (response) {
+                    if (response.success) {
+                        var allergen = response.data;
+                        console.log('Allergen loaded:', allergen);
+                        renderAllergenCheckBoxList(allergen);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    alert('AJAX: Error loading FoodCategories');
+                }
+            });
+        }
+
+        function renderAllergenCheckBoxList(allergens) {
+            var container = $("#allergenCheckboxContainer");
+            container.empty();
+
+            if (!allergens || allergens.length === 0) {
+                container.append('<div class="text-muted">No allergens available</div>');
+                return;
+            }
+
+            allergens.forEach(function (allergen) {
+                var checkbox = `
+                    <div class="form-check">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               name="allergenId"
+                               value="${allergen.id}"
+                               id="allergen_${allergen.id}">
+                        <label class="form-check-label" for="allergen_${allergen.id}">
+                            ${allergen.name}
+                        </label>
+                    </div>`;
+                container.append(checkbox);
+            });
+        }
+
+        function normalizePrice(v){
+            if (typeof v !== 'string') v = String(v ?? '');
+            return parseFloat(v.replace(',', '.'));
+        }
+
+        function EditNewFood(){
+            const selectedAllergenIds = $('input[name="allergenId"]:checked').map(function(){
+                return parseInt(this.value);
+            }).get();
+
+            let payload = {
+                name: $('#name').val()?.trim(),
+                description: $('#description').val()?.trim(),
+                price: normalizePrice($('#price').val()),
+                foodCategoryId: parseInt($('#foodCategorySelect').val() || '0'),
+                allergenIds: selectedAllergenIds
+            };
+
+            // Basic client-side check to avoid empty model
+            if (!payload.name || !payload.description) {
+                showMessage("Name and Description are required.", false);
+                return;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/Food/Edit",
+                data: payload,
+                success: function (response) {
+                    if (response?.success) {
+                        showMessage(response.message || "Food edited.", true);
+                    } else {
+                        showMessage(response?.message || "Failed to edit food.", false);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    try {
+                        const r = JSON.parse(xhr.responseText);
+                        if (r?.errors?.length) {
+                            const allErrors = r.errors.map(e => `${e.field}: ${e.errors.join(", ")}`).join("\n");
+                            showMessage(allErrors, false);
+                        } else {
+                            showMessage(r.message || "Validation failed.", false);
+                        }
+                    } catch {
+                        showMessage("Unexpected error editing food.", false);
+                    }
+                }
+            });
+        }
+
+
+    </script>
 }
