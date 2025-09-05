@@ -54,9 +54,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 await log.Information($"FoodCategory.Create success: id={entity.Id}");
                 return CreatedAtAction(nameof(Get), new { id = readDto.Id }, readDto);
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"FoodCategory.Create database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "FoodCategory.Create, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"FoodCategory.Create SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
@@ -149,9 +159,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 await log.Information($"FoodCategory.Update success: id={entity.Id}");
                 return Ok($"Successful update of {entity.Name} in {entity.Id}");
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"FoodCategory.Update database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "FoodCategory.Update, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"FoodCategory.Update SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
@@ -177,9 +197,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 await log.Information($"FoodCategory.Delete success: id={id}");
                 return Ok($"Successfully deletion of {entity.Name}");
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"FoodCategory.Delete database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "FoodCategory.Delete, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"FoodCategory.Delete SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
