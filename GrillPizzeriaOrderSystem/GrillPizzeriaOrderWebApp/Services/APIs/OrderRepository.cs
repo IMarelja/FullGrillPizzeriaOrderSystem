@@ -111,7 +111,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
             return ApiOperationResult.Ok("Order canceled successfully.");
         }
 
-        public async Task<IEnumerable<OrderViewModel>> GetUserOrdersAsync(string userId)
+        public async Task<IEnumerable<OrderViewModel>> GetUserOrdersAsync()
         {
             var token = _httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
 

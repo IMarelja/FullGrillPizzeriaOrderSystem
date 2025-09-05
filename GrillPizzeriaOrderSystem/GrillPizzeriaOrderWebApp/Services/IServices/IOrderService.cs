@@ -10,6 +10,6 @@ namespace GrillPizzeriaOrderWebApp.Services.IServices
         Task<OrderViewModel?> GetByIdAsync(int id);
         Task<ApiOperationResult<OrderViewModel>> CreateAsync(OrderCreateViewModel model);
         Task<ApiOperationResult> DeleteAsync(OrderDeleteViewModel model);
-        Task<IEnumerable<OrderViewModel>> GetUserOrdersAsync(string userId);
+        Task<IEnumerable<OrderViewModel>> GetUserOrdersAsync();
     }
 }
