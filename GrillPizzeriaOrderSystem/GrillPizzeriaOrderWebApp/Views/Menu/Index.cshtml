@@ -130,6 +130,20 @@
             }
         });
 
+        // Order into the cookie
+        $foodGridTarget.on('click', '.orderFoodButton', function (e) {
+            console.log('Order button clicked');
+            e.preventDefault();
+            const foodOrderId = $(this).data('food-id');
+            console.log(foodOrderId);
+            if (foodOrderId) {
+                console.log('Adding food ID to order:', foodOrderId);
+                addToOrder(foodOrderId);
+            }else{
+                alert('❌ Error: Food ID not found.');
+		    }
+        });
+
         function renderFoodInsidePartialView(html) {
             $foodGridTarget.html(html);
         }
@@ -142,6 +156,27 @@
             $($categoryFoodListTarget).html(html);
         }
 
+        function addToOrder(foodOrderId) {
+            $.ajax({
+                type: 'POST',
+                url: '/Order/AddItem',
+                data: {
+                    foodId: foodOrderId
+                },
+                success: function (responce) {
+                    if (responce.success) {
+                        //$('#cartItemCount').text(responce.count);
+                        alert('✅ Item added to cart\nTotal Items: ' + responce.count);
+                    } else {
+                        alert('❌ ' + (responce?.message ?? 'Failed to add item.'));
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    alert('Could not add item to cart do to error in the request.');
+                }
+            });
+		}
 
         function initialize() {
             LoadFoodCategories();
