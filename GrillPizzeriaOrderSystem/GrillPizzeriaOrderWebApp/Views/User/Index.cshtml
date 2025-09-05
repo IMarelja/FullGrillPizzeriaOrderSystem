@@ -1,126 +1,203 @@
-﻿@model ViewModels.UserViewModel
+﻿@using ModelConstants
 @using Microsoft.AspNetCore.Antiforgery
-@using ModelConstants
 @{
     ViewData["Title"] = "My Account";
 }
+
+<div id="messageForPasswordAndInfo" class="alert visually-hidden" role="alert"></div>
 
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
 
 <div class="container mt-4">
     <div class="row g-4">
         <!-- User Info -->
-        <div class="col-lg-7">
-            <div class="card shadow-sm">
-                <div class="card-header d-flex align-items-center">
-                    <span class="material-icons-outlined me-2">person</span>
-                    <h5 class="mb-0">My Info</h5>
-                </div>
-                <div class="card-body">
-                    <form id="userInfoForm" asp-controller="User" asp-action="UpdateMe" method="post" novalidate>
-                        @Html.AntiForgeryToken()
-                        <div class="mb-3">
-                            <label for="Email" class="form-label">Email</label>
-                            <input id="Email" name="Email" type="email" class="form-control" required maxlength="@ValidationConstants.EmailMaxLength" value="@Model.email" />
-                            <div class="invalid-feedback">Please enter a valid email.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="FirstName" class="form-label">First Name</label>
-                            <input id="FirstName" name="FirstName" type="text" class="form-control" required maxlength="@ValidationConstants.NameMaxLength" value="@Model.firstName" />
-                            <div class="invalid-feedback">First name is required.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="LastName" class="form-label">Last Name</label>
-                            <input id="LastName" name="LastName" type="text" class="form-control" required maxlength="@ValidationConstants.NameMaxLength" value="@Model.lastName" />
-                            <div class="invalid-feedback">Last name is required.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="Phone" class="form-label">Phone</label>
-                            <input id="Phone" name="Phone" type="tel" class="form-control" required maxlength="@ValidationConstants.PhoneMaxLength" value="@Model.phone" />
-                            <div class="invalid-feedback">Please enter a valid phone number.</div>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button id="btnSaveUser" type="submit" class="btn btn-primary">
-                                <span class="material-icons-outlined align-middle me-1" style="font-size:18px">save</span>
-                                Save Changes
-                            </button>
-                            <button id="btnResetUser" type="button" class="btn btn-light">
-                                <span class="material-icons-outlined align-middle me-1" style="font-size:18px">restart_alt</span>
-                                Reset
-                            </button>
-                        </div>
-                    </form>
-                </div>
+        <div class="col-lg-7 card shadow-sm">
+            <div class="card-header d-flex align-items-center">
+                <span class="material-icons-outlined me-2">person</span>
+                <h5 class="mb-0">My Info</h5>
             </div>
+            <partial name="_Info"/>
         </div>
 
         <!-- Change Password -->
-        <div class="col-lg-5">
-            <div id="changePasswordPanel"
-                 data-url="@Url.Action("ChangePassword", "Authentication")">
-                @await Html.PartialAsync("~/Views/Authentication/_ChangePassword.cshtml", new AuthenticationResult())
+        <div class="col-lg-5 card-body">
+            <div class="card-header d-flex align-items-center">
+                <span class="material-icons-outlined me-2">lock</span>
+                <h5 class="mb-0">Change Password</h5>
             </div>
+            <partial name="_ChangePassword" />
         </div>
     </div>
 </div>
 
+<script>
+    
+</script>
+
+
 @section Scripts {
     <script>
-        (function () {
-            const panel = document.getElementById('changePasswordPanel');
+        // User change form elements
+        const $formUserInfo = $('#userInfoForm');
+        const $emailInput = $('#Email');
+        const $firstNameInput = $('#FirstName');
+        const $lastNameInput = $('#LastName');
+		const $phoneInput = $('#Phone');
 
-            function wireChangePasswordForm() {
-                const form = panel.querySelector('#changePasswordForm');
-                if (!form) return;
 
-                form.addEventListener('submit', async function (e) {
-                    e.preventDefault();
+		// Password change form elements
+        const $formPassword = $('#changePasswordForm');
+		const $currentPasswordInput = $('#CurrentPassword');
+        const $newPasswordInput = $('#NewPassword');
+        const $confirmNewPasswordInput = $('#ConfirmNewPassword');
 
-                    // Optional: simple busy state
-                    const submitBtn = form.querySelector('[type="submit"]');
-                    const originalText = submitBtn ? submitBtn.innerHTML : null;
-                    if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Saving...'; }
+		// Message box for feedback
+        const messageBox = document.getElementById('messageForPasswordAndInfo');
+
+        $(document).ready(function () {
+
+            LoadUserInfo();
+
+            $formPassword.submit(function (e) {
+                e.preventDefault();
+                if ($newPasswordInput.val() != $newPasswordInput.val()) {
+                    showMessage("Passwords do not match", false);
+                } else {
+                    ChangePasswordCall();
+                }
+            });
+
+			$formUserInfo.submit(function (e) {
+				e.preventDefault();
+				UpdateUserInfoCall();
+            });
+        });
+
+        
+
+        function showMessage(text, isSuccess) {
+            messageBox.classList.remove("visually-hidden", "alert-success", "alert-danger");
+            messageBox.classList.add(isSuccess ? "alert-success" : "alert-danger");
+            messageBox.textContent = text;
+        }
+        
+        function ChangePasswordCall() {
+            $.ajax({
+                type: "POST",
+                url: "/Authentication/ChangePassword",
+                dataType: "json",
+                cache: false,
+                data: {
+                    currentPassword: $currentPasswordInput.val(),
+                    newPassword: $newPasswordInput.val(),
+                    confirmNewPassword: $confirmNewPasswordInput.val()
+                },
+                success: function (response) {
+                    if (response.success) {
+                        $formPassword[0].reset();
+                        showMessage(response.message, true);
+                    } else {
+                        showMessage(response.message, false);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.log('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    console.log('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
 
                     try {
-                        const url = form.action || panel.dataset.url;
-                        const fd = new FormData(form);
+                        // try parse JSON from 400 response
+                        var response = JSON.parse(xhr.responseText);
 
-                        // You can rely on the token in the form body (__RequestVerificationToken),
-                        // but adding the header also works with [ValidateAntiForgeryToken].
-                        const tokenEl = form.querySelector('input[name="__RequestVerificationToken"]');
-                        const token = tokenEl ? tokenEl.value : null;
+                        if (response.errors) {
+                            // Flatten errors into a string
+                            var allErrors = response.errors
+                                .map(e => e.field + ": " + e.errors.join("\n"))
+                                .join(" | ");
 
-                        const resp = await fetch(url, {
-                            method: 'POST',
-                            body: fd,
-                            headers: token ? { 'RequestVerificationToken': token } : {},
-                            credentials: 'same-origin'
-                        });
-
-                        const html = await resp.text();
-                        panel.innerHTML = html;   // replace partial content with server-rendered HTML
-                        wireChangePasswordForm(); // re-bind events on the newly injected DOM
-                    } catch (err) {
-                        // Minimal fallback UI
-                        const fallback = document.createElement('div');
-                        fallback.className = 'alert alert-danger mt-2';
-                        fallback.textContent = 'Unexpected error. Please try again.';
-                        panel.appendChild(fallback);
-                    } finally {
-                        if (submitBtn && originalText !== null) {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = originalText;
+                            showMessage(allErrors, false);
+                        } else {
+                            showMessage(response.message || "Validation failed.", false);
                         }
+                    } catch (parseErr) {
+                        // fallback if response wasn’t JSON
+                        showMessage("AJAX: Error updating the password.", false);
                     }
-                });
-            }
+                }
+            });
+        }
 
-            // initial bind
-            wireChangePasswordForm();
-        })();
+        function LoadUserInfo() {
+            $.ajax({
+                type: "GET",
+                url: "/User/GetMe",
+                dataType: "json",
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        renderUserInfoForm(response.data);
+                    } else {
+                        showMessage(response.message || "Failed to load user info.", false);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    showMessage("Error loading user info.", false);
+                }
+            });
+        }
+
+        function UpdateUserInfoCall() {
+            $.ajax({
+                type: "POST",
+                url: "/User/UpdateMe",
+                dataType: "json",
+                cache: false,
+                data: {
+                    email: $emailInput.val(),
+                    firstName: $firstNameInput.val(),
+                    lastName: $lastNameInput.val(),
+					phone: $phoneInput.val()
+                },
+                success: function (response) {
+                    if (response.success) {
+                        $formUserInfo[0].reset();
+                        LoadUserInfo();
+                        showMessage(response.message, true);
+                    } else {
+                        showMessage(response.message, false);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.log('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    console.log('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+
+                    try {
+                        // try parse JSON from 400 response
+                        var response = JSON.parse(xhr.responseText);
+
+                        if (response.errors) {
+                            // Flatten errors into a string
+                            var allErrors = response.errors
+                                .map(e => e.field + ": " + e.errors.join("\n"))
+                                .join(" | ");
+
+                            showMessage(allErrors, false);
+                        } else {
+                            showMessage(response.message || "Validation failed.", false);
+                        }
+                    } catch (parseErr) {
+                        // fallback if response wasn’t JSON
+                        showMessage("AJAX: Error updating the user info.", false);
+                    }
+                }
+            });
+        }
+
+        function renderUserInfoForm(user) {
+            $emailInput.val(user.email ?? '');
+            $firstNameInput.val(user.firstName ?? '');
+            $lastNameInput.val(user.lastName ?? '');
+            $phoneInput.val(user.phone ?? '');
+        }
     </script>
 }

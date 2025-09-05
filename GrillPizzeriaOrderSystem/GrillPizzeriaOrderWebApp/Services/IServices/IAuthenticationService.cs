@@ -7,6 +7,6 @@ namespace GrillPizzeriaOrderWebApp.Services.IServices
     {
         Task<AuthenticationResult> LoginAsync(LoginViewModel loginUser);
         Task<AuthenticationResult> RegisterAsync(RegisterViewModel registerUser);
-        Task<AuthenticationResult> ChangePasswordAsync(ChangePasswordViewModel request);
+        Task<ApiOperationResult> ChangePasswordAsync(ChangePasswordViewModel request);
     }
 }

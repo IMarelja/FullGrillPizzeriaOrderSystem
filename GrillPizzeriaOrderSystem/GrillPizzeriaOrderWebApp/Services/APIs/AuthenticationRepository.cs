@@ -10,10 +10,16 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
     {
         private readonly HttpClient _client;
         private const string EndPoint = "Authentication";
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private static readonly JsonSerializerOptions _jsonOpts = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
-        public AuthenticationRepository(HttpClient client)
+        public AuthenticationRepository(HttpClient client, IHttpContextAccessor httpContextAccessor)
         {
             _client = client;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<AuthenticationResult> LoginAsync(LoginViewModel loginUser)
@@ -134,43 +140,25 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
             }
         }
 
-        public async Task<AuthenticationResult> ChangePasswordAsync(ChangePasswordViewModel request)
+        public async Task<ApiOperationResult> ChangePasswordAsync(ChangePasswordViewModel request)
         {
-            try
+            var token = _httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
+
+            if (!string.IsNullOrEmpty(token))
             {
-                var resp = await _client.PostAsJsonAsync($"{EndPoint}/changepassword", new
-                {
-                    request.CurrentPassword,
-                    request.NewPassword,
-                    request.ConfirmNewPassword
-                });
-
-                var raw = await resp.Content.ReadAsStringAsync();
-
-                if (!resp.IsSuccessStatusCode)
-                {
-                    return new AuthenticationResult
-                    {
-                        Success = false,
-                        Message = $"Password change failed {(int)resp.StatusCode}: {raw}",
-                        StatusCode = (int)resp.StatusCode
-                    };
-                }
-
-                return new AuthenticationResult
-                {
-                    Success = true,
-                    Message = "Password changed successfully."
-                };
+                _client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             }
-            catch (Exception ex)
+
+            var response = await _client.PostAsJsonAsync($"{EndPoint}/changepassword", request);
+
+            if (!response.IsSuccessStatusCode)
             {
-                return new AuthenticationResult
-                {
-                    Success = false,
-                    Message = $"An error occurred during password change: {ex.Message}"
-                };
+                string raw = await response.Content.ReadAsStringAsync();
+                return ApiOperationResult.Fail($"Password change failed ({(int)response.StatusCode}): {raw}");
             }
+
+            return ApiOperationResult.Ok("Password change SUCCESSFUL");
         }
     }
 }

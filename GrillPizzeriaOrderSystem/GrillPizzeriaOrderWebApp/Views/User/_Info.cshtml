@@ -1,0 +1,39 @@
+﻿@using ModelConstants
+
+
+
+<div class="card-body">
+    <form id="userInfoForm">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label for="Email" class="form-label">Email</label>
+            <input id="Email" name="Email" type="email" class="form-control" required maxlength="@ValidationConstants.EmailMaxLength" />
+            <div class="invalid-feedback">Please enter a valid email.</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="FirstName" class="form-label">First Name</label>
+            <input id="FirstName" name="FirstName" type="text" class="form-control" required maxlength="@ValidationConstants.NameMaxLength" />
+            <div class="invalid-feedback">First name is required.</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="LastName" class="form-label">Last Name</label>
+            <input id="LastName" name="LastName" type="text" class="form-control" required maxlength="@ValidationConstants.NameMaxLength" />
+            <div class="invalid-feedback">Last name is required.</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="Phone" class="form-label">Phone</label>
+            <input id="Phone" name="Phone" type="tel" class="form-control" required maxlength="@ValidationConstants.PhoneMaxLength">
+            <div class="invalid-feedback">Please enter a valid phone number.</div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button id="btnSaveUser" type="submit" class="btn btn-primary">
+                <span class="material-icons-outlined align-middle me-1" style="font-size:18px">save</span>
+                Save Changes
+            </button>
+        </div>
+    </form>
+</div>

@@ -110,7 +110,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 if (user == null)
                     return NotFound();
 
-                var emailInUse = await _context.User.AnyAsync(u => u.Email == dto.Email && u.Id != userId);
+                var emailInUse = await _context.User.AnyAsync(u => u.Email == dto.email && u.Id != userId);
                 if (emailInUse)
                     return BadRequest("Email is already in use.");
 

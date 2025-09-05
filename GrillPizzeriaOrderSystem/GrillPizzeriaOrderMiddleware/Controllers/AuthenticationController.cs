@@ -136,13 +136,13 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                     return NotFound("User not found.");
                 }
 
-                var oldPassword = Hashing.sha256(changePassword.CurrentPassword);                
+                var oldPassword = Hashing.sha256(changePassword.currentPassword);                
 
                 if (user.PasswordHash != oldPassword)
                     return BadRequest("Current password is incorrect.");
 
-                var newPassword = Hashing.sha256(changePassword.NewPassword);
-                var confirmNewPassword = Hashing.sha256(changePassword.ConfirmNewPassword);
+                var newPassword = Hashing.sha256(changePassword.newPassword);
+                var confirmNewPassword = Hashing.sha256(changePassword.confirmNewPassword);
 
                 if (confirmNewPassword != newPassword)
                     return BadRequest("New passwords aren't the same");

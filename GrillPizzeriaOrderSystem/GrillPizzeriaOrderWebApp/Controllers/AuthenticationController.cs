@@ -6,6 +6,7 @@ using GrillPizzeriaOrderWebApp.Services.IServices;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using NuGet.Common;
@@ -79,7 +80,6 @@ namespace GrillPizzeriaOrderWebApp.Controllers
 
     [HttpPost]
     [AllowAnonymous]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(RegisterViewModel registerUser)
     {
         if (!ModelState.IsValid)
@@ -96,29 +96,53 @@ namespace GrillPizzeriaOrderWebApp.Controllers
         return RedirectToAction("Login", new { returnUrl = registerUser.ReturnUrl });
     }
 
-    [HttpGet]
-    [Authorize(Policy = "UserOnly")]
-    public IActionResult _ChangePassword() => PartialView();
-
     [HttpPost]
     [Authorize(Policy = "UserOnly")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> _ChangePassword(ChangePasswordViewModel request)
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel request)
     {
-        if (!ModelState.IsValid)
+        try
         {
-            AuthenticationResult badState = new AuthenticationResult
+
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState
+                        .Where(ms => ms.Value?.Errors.Count > 0)
+                        .Select(ms => new
+                        {
+                            Field = ms.Key,
+                            Errors = ms.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                        });
+
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Validation failed",
+                        errors
+                    });
+                }
+
+                var responce = await _authenticationService.ChangePasswordAsync(request);
+
+            if(responce == null)
+                return NotFound(new { success = false, message = "Change password request failed or unauthorized" });
+
+            if (!responce.Succeeded)
+                return BadRequest(new { success = responce.Succeeded + " " + responce.Message });
+
+            return Ok(new
             {
-                Success = false,
-                Message = "Invalid model state"
-            };
-
-            return PartialView(badState);
+                success = responce.Succeeded,
+                message = responce.Message
+            });
         }
-
-        var result = await _authenticationService.ChangePasswordAsync(request);
-
-        return PartialView(result);
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                success = false,
+                message = "Error with the Password change: " + ex.Message
+            });
+        }
     }
 
     [AllowAnonymous]
@@ -130,6 +154,7 @@ namespace GrillPizzeriaOrderWebApp.Controllers
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        Response.Cookies.Delete("Cart");
         return RedirectToAction("Index", "Home");
     }
 }

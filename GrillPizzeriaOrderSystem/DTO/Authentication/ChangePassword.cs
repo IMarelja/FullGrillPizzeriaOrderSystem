@@ -12,15 +12,15 @@ namespace DTO.Authentication
     {
         [Required]
         [DataType(DataType.Password)]
-        public string CurrentPassword { get; set; } = string.Empty;
+        public string currentPassword { get; set; } = string.Empty;
 
         [Required]
         [StringLength(ValidationConstants.PasswordPlainMaxLenght, MinimumLength = ValidationConstants.PasswordPlainMinLenght, ErrorMessage = "Password must be between 6 and 100 characters.")]
         [DataType(DataType.Password)]
-        public string NewPassword { get; set; } = string.Empty;
+        public string newPassword { get; set; } = string.Empty;
 
         [Required]
         [DataType(DataType.Password)]
-        public string ConfirmNewPassword { get; set; } = string.Empty;
+        public string confirmNewPassword { get; set; } = string.Empty;
     }
 }

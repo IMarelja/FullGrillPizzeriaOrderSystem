@@ -13,20 +13,20 @@ namespace DTO.User
         [Required]
         [EmailAddress]
         [StringLength(ValidationConstants.EmailMaxLength)]
-        public string Email { get; set; } = string.Empty;
+        public string email { get; set; } = string.Empty;
 
         [Required]
         [StringLength(ValidationConstants.NameMaxLength)]
-        public string FirstName { get; set; } = string.Empty;
+        public string firstName { get; set; } = string.Empty;
 
         [Required]
         [StringLength(ValidationConstants.NameMaxLength)]
-        public string LastName { get; set; } = string.Empty;
+        public string lastName { get; set; } = string.Empty;
 
         [Required]
         [StringLength(ValidationConstants.PhoneMaxLength)]
         [Phone]
-        public string Phone { get; set; } = string.Empty;
+        public string phone { get; set; } = string.Empty;
     }
 
 }

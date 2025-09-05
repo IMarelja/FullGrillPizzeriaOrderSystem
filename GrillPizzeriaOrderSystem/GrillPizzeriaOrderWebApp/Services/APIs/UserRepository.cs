@@ -82,18 +82,19 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
 
             var response = await _client.PutAsJsonAsync($"{EndPoint}/me", user);
 
-            if (response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
-                using var stream = await response.Content.ReadAsStreamAsync();
-                var vm = await JsonSerializer.DeserializeAsync<AllergenViewModel>(stream, _jsonOpts);
-
-                if (vm is null)
-                    return ApiOperationResult<UserViewModel>.Fail("Empty response from server.");
-
+                string raw = await response.Content.ReadAsStringAsync();
+                return ApiOperationResult<UserViewModel>.Fail($"Create failed ({(int)response.StatusCode}): {raw}");
             }
 
-            string raw = await response.Content.ReadAsStringAsync();
-            return ApiOperationResult<UserViewModel>.Fail($"Update failed ({(int)response.StatusCode}): {raw}");
+            using var stream = await response.Content.ReadAsStreamAsync();
+            var vm = await JsonSerializer.DeserializeAsync<UserViewModel>(stream, _jsonOpts);
+
+            if (vm is null)
+                return ApiOperationResult<UserViewModel>.Fail("Empty response from server.");
+
+            return ApiOperationResult<UserViewModel>.Ok(vm, "User updated successfully.");
         }
     }
 }
