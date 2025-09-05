@@ -96,9 +96,12 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
                 var orders = await _context.Order
                     .Where(o => o.UserId == userId)
-                    .Include(o => o.User)
-                    .Include(o => o.OrderFoods).ThenInclude(of => of.Food)
-                    .OrderByDescending(o => o.OrderDate)
+                    .Include(o => o.OrderFoods)
+                        .ThenInclude(oi => oi.Food)
+                            .ThenInclude(f => f.FoodCategory)
+                    .Include(o => o.OrderFoods)
+                        .ThenInclude(oi => oi.Food)
+                            .ThenInclude(f => f.FoodAllergens)
                     .ToListAsync();
 
                 await log.Information($"Orders.GetMyOrders success: userId={userId}, count={orders.Count}");

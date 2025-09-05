@@ -1,0 +1,276 @@
+﻿@* Anti-forgery token for POST delete (read by JS) *@
+@{
+
+    ViewData["Title"] = "Orders";
+}
+@Html.AntiForgeryToken()
+@model List<ViewModels.OrderViewModel>
+
+<div>
+    <h2> Order page </h2>
+</div>
+
+@* Existing partial include *@
+<partial name="_PendingOrders"/>
+
+<div id="listOrders">
+    <div class="text-muted">Loading…</div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+          // Cache jQuery elements
+          var $listOrders = $('#listOrders');
+          var $cartPanel  = $('#cart-panel');
+          var $listEl     = $('#cart-list');
+          var $loadingEl  = $('#cart-loading');
+          var $emptyEl    = $('#cart-empty');
+          var $footerEl   = $('#cart-footer');
+          var $totalEl    = $('#cart-total');
+          var $countEl    = $('#cart-count');
+          var $orderBtn   = $('#btn-place-order');
+
+          var fmtMoney = new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 });
+
+          function getCsrf() {
+            var $el = $('input[name="__RequestVerificationToken"]');
+            return $el.length ? $el.val() : null;
+          }
+
+          function showLoading() {
+            $loadingEl.removeClass('d-none');
+            $emptyEl.addClass('d-none');
+            $listEl.addClass('d-none');
+            $footerEl.addClass('d-none');
+            if ($orderBtn.length) $orderBtn.prop('disabled', true);
+          }
+
+          function showEmpty() {
+            $loadingEl.addClass('d-none');
+            $emptyEl.removeClass('d-none');
+            $listEl.addClass('d-none');
+            $footerEl.addClass('d-none');
+            $countEl.text('');
+            if ($orderBtn.length) $orderBtn.prop('disabled', true);
+          }
+
+          function showFilled() {
+            $loadingEl.addClass('d-none');
+            $emptyEl.addClass('d-none');
+            $listEl.removeClass('d-none');
+            $footerEl.removeClass('d-none');
+          }
+
+          function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, function (m) {
+              return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m];
+            });
+          }
+
+          function renderAllergens(allergenArr) {
+            var arr = Array.isArray(allergenArr) ? allergenArr : [];
+            if (arr.length === 0) return '<span class="badge text-bg-light">No declared allergens</span>';
+            return arr.slice(0, 8).map(function (a) {
+              return '<span class="badge text-bg-secondary me-1">' + escapeHtml(String(a)) + '</span>';
+            }).join('');
+          }
+
+          function fetchCart() {
+            showLoading();
+            $.ajax({
+              url: '/Order/GetCart',
+              method: 'GET',
+              headers: { 'Accept': 'application/json' },
+              cache: false,
+              dataType: 'json'
+            }).done(function (data) {
+              if (data && data.success) {
+                renderCart(data);
+              } else {
+                showEmpty();
+              }
+            }).fail(function () {
+              $listEl.removeClass('d-none').html(
+                '<li class="list-group-item">' +
+                  '<div class="alert alert-danger d-flex justify-content-between align-items-center mb-0" role="alert">' +
+                    '<div>Could not load your cart. Please try again.</div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-light" id="retry-load">Retry</button>' +
+                  '</div>' +
+                '</li>'
+              );
+              $loadingEl.addClass('d-none');
+              $emptyEl.addClass('d-none');
+              $footerEl.addClass('d-none');
+              $countEl.text('');
+              if ($orderBtn.length) $orderBtn.prop('disabled', true);
+            });
+          }
+
+          function renderCart(data) {
+            var items = Array.isArray(data && data.items) ? data.items : [];
+            if (!items.length) {
+              $listEl.empty();
+              showEmpty();
+              return;
+            }
+
+            var html = items.map(function (item) {
+              var foodName = escapeHtml(item.foodName || 'Item');
+              var category = escapeHtml(item.category || 'Uncategorized');
+              var qty = Number(item.quantity || 0);
+              var lineTotal = fmtMoney.format(Number(item.totalPrice || 0));
+              var unitPrice = fmtMoney.format(Number(item.unitPrice || 0));
+              var foodId = Number(item.foodId || 0);
+              return (
+                '<li class="list-group-item">' +
+                  '<div class="row align-items-center g-2">' +
+                    '<div class="col-6">' +
+                      '<div class="fw-semibold">' + foodName + '</div>' +
+                      '<div class="small text-muted">' + category + '</div>' +
+                      '<div class="mt-1">' + renderAllergens(item.allergen) + '</div>' +
+                    '</div>' +
+                    '<div class="col-3 text-end">' +
+                      '<div class="small text-muted">Qty</div>' +
+                      '<div class="fw-semibold">' + qty + '</div>' +
+                    '</div>' +
+                    '<div class="col-3 text-end">' +
+                      '<div class="small text-muted">Line total</div>' +
+                      '<div class="fw-semibold">' + lineTotal + '</div>' +
+                    '</div>' +
+                  '</div>' +
+                  '<div class="d-flex justify-content-between mt-2">' +
+                    '<div class="small text-muted">Unit: ' + unitPrice + '</div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger btn-remove" data-food-id="' + foodId + '" aria-label="Remove ' + foodName + '">' +
+                      '<i class="bi bi-trash"></i> Delete' +
+                    '</button>' +
+                  '</div>' +
+                '</li>'
+              );
+            }).join('');
+
+            $listEl.html(html);
+            $totalEl.text(fmtMoney.format(Number((data && data.totalPrice) || 0)));
+            $countEl.text(items.length + ' item' + (items.length === 1 ? '' : 's'));
+            showFilled();
+            if ($orderBtn.length) $orderBtn.prop('disabled', false);
+          }
+
+          function removeItem(foodId) {
+            var token = getCsrf();
+            return $.ajax({
+              url: '/Order/RemoveItem',
+              method: 'POST',
+              data: { foodId: String(foodId) },
+              headers: token ? { 'RequestVerificationToken': token } : {},
+              contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+              dataType: 'json'
+            }).always(function () {
+              fetchCart();
+            });
+          }
+
+          function showOrderError(msg) {
+            var $alert = $('<li class="list-group-item">').html(
+              '<div class="alert alert-warning mb-0" role="alert">' + escapeHtml(msg) + '</div>'
+            );
+            $listEl.prepend($alert);
+          }
+
+          function readErrorMessage(jqXhr) {
+            try {
+              if (jqXhr && jqXhr.responseJSON && jqXhr.responseJSON.message) {
+                return String(jqXhr.responseJSON.message);
+              }
+            } catch (e) { /* ignore */ }
+            var status = jqXhr && jqXhr.status ? jqXhr.status : '???';
+            return 'Order could not be created (HTTP ' + status + ').';
+          }
+
+          function createOrder() {
+            if (!$orderBtn.length) return;
+
+            $orderBtn.prop('disabled', true).html(
+              '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Ordering…'
+            );
+
+            var token = getCsrf();
+            $.ajax({
+              url: '/Order/CreateOrder',
+              method: 'POST',
+              headers: token ? { 'RequestVerificationToken': token } : {},
+              contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+              data: '', // no body
+              dataType: 'json'
+            }).done(function (data) {
+              if (data && data.success) {
+                window.location.reload();
+                return;
+              }
+              showOrderError('Order could not be created.');
+            }).fail(function (jqXhr) {
+              showOrderError(readErrorMessage(jqXhr));
+            }).always(function () {
+              // If page didn't reload:
+              if (document.visibilityState !== 'hidden') {
+                $orderBtn.prop('disabled', false).html('<i class="bi bi-bag-check"></i> Order');
+              }
+            });
+          }
+
+          // Load orders partial into #listOrders
+          function Orders() {
+            if (!$listOrders.length) return;
+            $listOrders.html('<div class="text-muted">Loading…</div>');
+            $.ajax({
+              url: '@Url.Action("GetMyOrders", "Order")',
+              method: 'GET',
+              headers: { 'Accept': 'text/html' },
+              cache: false
+            }).done(function (html) {
+				console.log('Orders loaded');
+                console.log(html);
+              $listOrders.html(html);
+            }).fail(function (err) {
+              console.error('AJAX error loading orders:', err);
+              $listOrders.html(
+                '<div class="alert alert-danger" role="alert">Could not load your orders. Please refresh the page.</div>'
+              );
+            });
+          }
+
+          // Delegated events
+          $(document).on('click', '.btn-remove', function () {
+            var $btn = $(this);
+            var id = $btn.data('food-id');
+            if (!id) return;
+            $btn.prop('disabled', true);
+            $.when(removeItem(id)).always(function () {
+              $btn.prop('disabled', false);
+            });
+          });
+
+          $(document).on('click', '#retry-load', function () {
+            fetchCart();
+          });
+
+          $(document).on('click', '#btn-place-order', function (e) {
+            e.preventDefault();
+            createOrder();
+          });
+
+          // Custom event to refresh cart
+          $(document).on('cart:refresh', function () { fetchCart(); });
+
+          // Fire on load (jQuery DOM ready)
+          $(function () { fetchCart(); Orders(); });
+
+          // Also run if script loads late and DOM is already ready
+          if (document.readyState === 'interactive' || document.readyState === 'complete') {
+            fetchCart(); Orders();
+          }
+        })();
+    </script>
+}
+
+

@@ -66,6 +66,7 @@
 
         const $foodGridTarget = $('#foodGridContainer');
         
+
         
         function LoadFoodGrid(query, foodCategoryId, page = 1, pageSize = 10) {
 
@@ -137,7 +138,6 @@
             const foodOrderId = $(this).data('food-id');
             console.log(foodOrderId);
             if (foodOrderId) {
-                console.log('Adding food ID to order:', foodOrderId);
                 addToOrder(foodOrderId);
             }else{
                 alert('❌ Error: Food ID not found.');

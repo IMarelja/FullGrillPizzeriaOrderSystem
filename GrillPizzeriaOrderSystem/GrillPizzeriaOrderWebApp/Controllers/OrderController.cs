@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using GrillPizzeriaOrderWebApp.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -11,9 +12,77 @@ namespace GrillPizzeriaOrderWebApp.Controllers
     public class OrderController : Controller
     {
         private const string CartCookieName = "Cart";
+        private readonly IOrderService _orderService;
+        private readonly IFoodService _foodService;
 
-        public OrderController()
+        public OrderController(IOrderService orderService, IFoodService foodService)
         {
+            _orderService = orderService;
+            _foodService = foodService;
+        }
+
+        [HttpGet]
+        [Authorize(Policy = "UserOnly")]
+        public IActionResult Index()
+            => View();
+
+        [HttpGet]
+        [Authorize(Policy = "UserOnly")]
+        public async Task<IActionResult> GetCart()
+        {
+            OrderCreateViewModel? cart = null;
+            if (Request.Cookies.TryGetValue(CartCookieName, out var existing) && !string.IsNullOrWhiteSpace(existing))
+            {
+                try
+                {
+                    cart = JsonSerializer.Deserialize<OrderCreateViewModel>(existing);
+                }
+                catch (Exception)
+                {
+                    cart = null;
+                }
+            }
+            if (cart == null || cart.items == null || !cart.items.Any())
+            {
+                return Ok(new { success = true, items = new List<object>(), totalPrice = 0.0m });
+            }
+            var detailedItems = new List<object>();
+            decimal totalPrice = 0.0m;
+            foreach (var item in cart.items)
+            {
+                var food = await _foodService.GetById(item.foodId);
+                if (food != null)
+                {
+                    var itemTotal = food.price * item.quantity;
+                    totalPrice += itemTotal;
+                    detailedItems.Add(new
+                    {
+                        foodId = item.foodId,
+                        foodName = food.name,
+                        quantity = item.quantity,
+                        unitPrice = food.price,
+                        totalPrice = itemTotal,
+                        allergen = food.allergens.Select(a => a.name).ToList(), // Could not have any allergens
+                        category = food.category.name
+                    });
+                }
+            }
+            return Ok(new { success = true, items = detailedItems, totalPrice });
+        }
+
+        [HttpGet]
+        [Authorize(Policy = "UserOnly")]
+        public async Task<IActionResult> GetMyOrders()
+        {
+            var orders = await _orderService.GetUserOrdersAsync();
+
+            var model = orders?.Select(o => new OrderViewModel
+            {
+                // map properties...
+            }).ToList() ?? new List<OrderViewModel>();
+
+
+            return PartialView("~/Views/Order/_SentOrders.cshtml", model);
         }
 
         [HttpPost]
@@ -166,6 +235,10 @@ namespace GrillPizzeriaOrderWebApp.Controllers
                 return BadRequest(new { success = false, message = "Cart is empty" });
 
 
+            var responce = await _orderService.CreateAsync(cart);
+
+            if (!responce.Succeeded)
+                return BadRequest(new { success = false, message = responce.Message ?? "Order creation failed." });
 
             Response.Cookies.Delete(CartCookieName);
             return Ok(new { success = true });

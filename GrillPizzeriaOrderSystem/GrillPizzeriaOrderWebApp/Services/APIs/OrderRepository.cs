@@ -10,7 +10,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
     {
         private readonly HttpClient _client;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public const string EndPoint = "Order";
+        public const string EndPoint = "Orders";
         private static readonly JsonSerializerOptions _jsonOpts = new()
         {
             PropertyNameCaseInsensitive = true

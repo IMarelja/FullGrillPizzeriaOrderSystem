@@ -1,0 +1,142 @@
+﻿
+@model ViewModels.FoodCreateViewModel
+
+<div id="createFoodDialog" class="p-4 rounded shadow-lg w-50">
+    <form asp-action="Create" asp-controller="Food" method="post" enctype="multipart/form-data">
+        <h3 class="mb-3">Create Food Item</h3>
+
+        <div class="mb-3">
+            <label asp-for="name" class="form-label">Name</label>
+            <input asp-for="name" class="form-control" />
+            <span asp-validation-for="name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="description" class="form-label">Description</label>
+            <textarea asp-for="description" class="form-control"></textarea>
+            <span asp-validation-for="description" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="price" class="form-label"></label>
+            <input asp-for="price" class="form-control" />
+            <span asp-validation-for="price" class="text-danger"></span>
+        </div>
+
+        <div>
+            <label class="form-label">Select a category</label>
+            <select id="foodCategorySelect" class="foodCategoryListDropdown form-select" name="EditFoodCategory">
+                <option value="0">Select an Category</option>
+            </select>
+            <input id="editSelectFoodCategoryHiddenId" type="hidden" asp-for="foodCategoryId" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Select Allergens</label>
+            <div id="allergenCheckboxContainer"></div>
+        </div>
+        
+        <input class="mb-3 btn-info" type="submit" value="Submit">
+    </form>
+</div>
+
+@section Scripts {
+    <script type="text/javascript">
+
+        const $formCreateFood = document.querySelectorAll('.createFoodDialog');
+		const $dropDownsFoodCategorySelected = document.querySelectorAll('.foodCategoryListDropdown');
+
+        $(document).ready(function () {
+
+            LoadFoodCategory();
+			LoadAllergens();
+
+            $('#foodCategorySelect').on('change', function () {
+                $('#editSelectFoodCategoryHiddenId').val($(this).val());
+            });
+
+            $formCreateFood.submit
+        });
+
+        function LoadFoodCategories(){
+            $.ajax({
+                type: "GET",
+                url: '/FoodCategory/GetAll',
+                dataType: "json",
+                cache: true,
+                success: function (response) {
+                    if (response.success) {
+                        var foodcategories = response.data;
+                        console.log('FoodCategories loaded:', foodcategories);
+                        renderFoodCategoryAsDropdown(foodcategories);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    alert('AJAX: Error loading FoodCategories');
+                }
+            });
+        }
+
+        function renderFoodCategoryAsDropdown(foodcategories) {
+            var html = '<option value="0">Select an Food Category</option>';
+            foodcategories.forEach(function(foodcategory) {
+                html += `<option value="${foodcategory.id}">${foodcategory.name}</option>`;
+            });
+
+            $dropDownsFoodCategorySelected.forEach(function(select) {
+                select.innerHTML = html;
+            });
+        }
+
+        function LoadAllergens(){
+            $.ajax({
+                type: "GET",
+                url: '/Allergen/GetAll',
+                dataType: "json",
+                cache: true,
+                success: function (response) {
+                    if (response.success) {
+                        var foodcategories = response.data;
+                        console.log('Allergen loaded:', allergen);
+                        renderAllergenCheckBoxList(allergen);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    alert('AJAX: Error loading FoodCategories');
+                }
+            });
+        }
+
+        function renderAllergenCheckBoxList(allergens) {
+            var container = $("#allergenCheckboxContainer");
+            container.empty();
+
+            if (!allergens || allergens.length === 0) {
+                container.append('<div class="text-muted">No allergens available</div>');
+                return;
+            }
+
+            allergens.forEach(function (allergen) {
+                var checkbox = `
+                    <div class="form-check">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               name="SelectedAllergenIds"
+                               value="${allergen.id}"
+                               id="allergen_${allergen.id}">
+                        <label class="form-check-label" for="allergen_${allergen.id}">
+                            ${allergen.name}
+                        </label>
+                    </div>`;
+                container.append(checkbox);
+            });
+        }
+
+    </script>
+}

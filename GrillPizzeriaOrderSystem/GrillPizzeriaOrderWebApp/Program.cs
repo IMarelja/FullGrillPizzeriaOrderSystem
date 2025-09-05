@@ -72,6 +72,14 @@ builder.Services.AddHttpClient<ILogService, LogRepository>((serviceProvider, cli
 
 });
 
+builder.Services.AddHttpClient<IOrderService, OrderRepository>((serviceProvider, client) =>
+{
+    var apiSettings = serviceProvider.GetRequiredService<IOptions<WebAPISettings>>().Value;
+    client.BaseAddress = new Uri(apiSettings.BaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "text/plain");
+
+});
+
 // Cookies authentication
 
 builder.Services

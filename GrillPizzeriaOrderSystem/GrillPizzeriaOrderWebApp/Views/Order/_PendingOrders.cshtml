@@ -1,0 +1,36 @@
+﻿<div id="cart-panel" class="card shadow-sm">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <div class="fw-semibold">Your Cart</div>
+        <div class="small text-muted" id="cart-count"></div>
+    </div>
+
+    <div class="card-body p-0">
+        <!-- Loading state -->
+        <div id="cart-loading" class="p-4 text-center">
+            <div class="spinner-border" role="status" aria-hidden="true"></div>
+            <div class="mt-2">Loading cart…</div>
+        </div>
+
+        <!-- Empty state -->
+        <div id="cart-empty" class="p-4 text-center d-none">
+            <div class="mb-2">Your cart is empty.</div>
+            <a href="#menu" class="btn btn-outline-primary btn-sm">Browse menu</a>
+        </div>
+
+        <!-- Filled state -->
+        <ul id="cart-list" class="list-group list-group-flush d-none" aria-live="polite"></ul>
+
+        <!-- Footer / total + order -->
+        <div id="cart-footer" class="d-none border-top p-3">
+            <div class="d-flex flex-column flex-md-row gap-3 justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="fw-semibold">Total</div>
+                    <div id="cart-total" class="fw-bold"></div>
+                </div>
+                <button id="btn-place-order" type="button" class="btn btn-primary btn-sm" disabled>
+                    <i class="bi bi-bag-check"></i> Order
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

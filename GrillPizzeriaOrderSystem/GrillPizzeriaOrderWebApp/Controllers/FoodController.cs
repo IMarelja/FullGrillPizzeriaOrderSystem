@@ -1,6 +1,7 @@
 ﻿using System.Net.Http;
 using System.Text.Json;
 using System.Xml.Linq;
+using GrillPizzeriaOrderWebApp.Models;
 using GrillPizzeriaOrderWebApp.Services.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,36 @@ namespace GrillPizzeriaOrderWebApp.Controllers
         public FoodController(IFoodService foodService)
         {
             _foodService = foodService;
+        }
+
+        public IActionResult Index()
+            => View("CreateFood.cshtml");
+
+        public async Task<IActionResult> Create(FoodCreateViewModel food)
+        {
+            if (!ModelState.IsValid)
+            {
+                var message = ApiOperationResult.Fail("Creation validation error.");
+                return View("~/Views/Food/CreateFood.cshtml", message);
+            }
+
+            var responce = await _foodService.CreateAsync(food);
+
+            return View("~/Views/Food/CreateFood.cshtml", new ApiOperationResult<FoodCreateViewModel> { Succeeded = true });
+        }
+
+        public async Task<IActionResult > Delete(int foodId)
+        {
+
+
+            FoodDeleteViewModel foodDeleteViewModel = new FoodDeleteViewModel() { id = foodId };
+
+            var responce = await _foodService.DeleteAsync(foodDeleteViewModel);
+
+            if (!responce.Succeeded)
+                return RedirectToAction("Index");
+
+            return View();
         }
 
         [HttpGet]

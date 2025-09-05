@@ -1,0 +1,112 @@
+﻿@model List<ViewModels.OrderViewModel>
+
+<div class="mb-3">
+    <h3 class="h5 mb-3">My Orders</h3>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info mb-0" role="alert">
+            You haven't placed any orders yet.
+        </div>
+    }
+    else
+    {
+        <div class="accordion" id="ordersAccordion">
+            @{
+                var idx = 0;
+            }
+            @foreach (var order in Model)
+            {
+                var orderIndex = $"order-{order.Id}-{idx++}";
+                var itemCount = (order.Items?.Sum(i => i.Quantity) ?? 0);
+                var computedTotal = order.OrderTotalPrice > 0
+                ? order.OrderTotalPrice
+                : (order.Items?.Sum(i => i.LineTotal) ?? 0m);
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-@orderIndex">
+                        <button class="accordion-button d-flex justify-content-between align-items-center collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse-@orderIndex"
+                                aria-expanded="false"
+                                aria-controls="collapse-@orderIndex">
+                            <div class="w-100 d-flex flex-wrap gap-2 align-items-center">
+                                <span class="fw-semibold">Order #@order.Id</span>
+                                <span class="badge">@order.OrderDate.ToString("MMM dd, yyyy")</span>
+                                <span class="ms-auto d-inline-flex gap-2">
+                                    <span class="badge text-bg-primary">@itemCount item(s)</span>
+                                    <span class="badge text-bg-success">Total: @computedTotal.ToString("C")</span>
+                                </span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse-@orderIndex"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="heading-@orderIndex"
+                         data-bs-parent="#ordersAccordion">
+                        <div class="accordion-body p-0">
+                            @if (order.Items != null && order.Items.Any())
+                            {
+                                <ul class="list-group list-group-flush">
+                                    @foreach (var item in order.Items)
+                                    {
+                                        var food = item.Food;
+                                        <li class="list-group-item">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                                        <span class="fw-semibold">@food?.name</span>
+                                                        @if (!string.IsNullOrWhiteSpace(food?.category?.name))
+                                                        {
+                                                            <span class="badge border">@food.category.name</span>
+                                                        }
+                                                    </div>
+
+                                                    @if (!string.IsNullOrWhiteSpace(food?.description))
+                                                    {
+                                                        <div class="text-muted small">@food.description</div>
+                                                    }
+
+                                                    @if (food?.allergens != null && food.allergens.Any())
+                                                    {
+                                                        <div class="mt-1 d-flex flex-wrap gap-1">
+                                                            @foreach (var al in food.allergens)
+                                                            {
+                                                                <span class="badge rounded-pill text-bg-warning text-dark small">@al.name</span>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+
+                                                <div class="text-end">
+                                                    <div class="small text-muted">Qty</div>
+                                                    <div class="fw-semibold">@item.Quantity</div>
+                                                </div>
+
+                                                <div class="text-end" style="min-width: 120px;">
+                                                    <div class="small text-muted">Line total</div>
+                                                    <div class="fw-semibold">@item.LineTotal.ToString("C")</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            <div class="p-3 d-flex justify-content-between align-items-center">
+                                <div class="text-muted">
+                                    <span class="me-2">Items:</span><strong>@itemCount</strong>
+                                </div>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="fs-6">
+                                        <span class="text-muted me-1">Order total:</span>
+                                        <strong>@computedTotal.ToString("C")</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
