@@ -4,7 +4,6 @@
     ViewData["Title"] = "Orders";
 }
 @Html.AntiForgeryToken()
-@model List<ViewModels.OrderViewModel>
 
 <div>
     <h2> Order page </h2>
@@ -12,6 +11,11 @@
 
 @* Existing partial include *@
 <partial name="_PendingOrders"/>
+
+
+<div>
+	<h3 class="h5 mb-3">My Orders</h3>
+</div>
 
 <div id="listOrders">
     <div class="text-muted">Loading…</div>
@@ -22,7 +26,6 @@
         (function () {
           // Cache jQuery elements
           var $listOrders = $('#listOrders');
-          var $cartPanel  = $('#cart-panel');
           var $listEl     = $('#cart-list');
           var $loadingEl  = $('#cart-loading');
           var $emptyEl    = $('#cart-empty');
@@ -224,13 +227,13 @@
             $listOrders.html('<div class="text-muted">Loading…</div>');
             $.ajax({
               url: '@Url.Action("GetMyOrders", "Order")',
+              dataType: 'html',
               method: 'GET',
-              headers: { 'Accept': 'text/html' },
               cache: false
             }).done(function (html) {
 				console.log('Orders loaded');
                 console.log(html);
-              $listOrders.html(html);
+                $listOrders.html(html);
             }).fail(function (err) {
               console.error('AJAX error loading orders:', err);
               $listOrders.html(
@@ -267,7 +270,8 @@
 
           // Also run if script loads late and DOM is already ready
           if (document.readyState === 'interactive' || document.readyState === 'complete') {
-            fetchCart(); Orders();
+            fetchCart(); 
+            Orders();
           }
         })();
     </script>

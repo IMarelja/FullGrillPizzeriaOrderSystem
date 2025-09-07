@@ -1,4 +1,4 @@
-﻿@model List<ViewModels.FoodViewModel>
+﻿
 @{
 
     ViewData["Title"] = "Food Menu";
@@ -17,7 +17,7 @@
         <div class="col-md-5">
             <input id="nameSearch" name="search" class="form-control" placeholder="Search food…" />
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <select id="categoryFoodListDropdown" name="foodCategoryId" class="form-select">
                 <option value="">All categories</option>
             </select>
@@ -142,6 +142,28 @@
             }else{
                 alert('❌ Error: Food ID not found.');
 		    }
+        });
+
+        // Edit food view
+        $foodGridTarget.on('click', '.editFoodButton', function (e) {
+            e.preventDefault();
+            const foodId = $(this).data('food-id');
+            if (foodId) {
+                window.location.href = `/Food/EditFoodView/${foodId}`;
+            } else {
+                alert('❌ Error: Food ID not found.');
+            }
+		});
+
+        // Delet food view
+        $foodGridTarget.on('click', '.deleteFoodButton', function (e) {
+            e.preventDefault();
+            const foodId = $(this).data('food-id');
+            if (foodId) {
+                window.location.href = `/Food/DeleteFoodView/${foodId}`;
+            } else {
+                alert('❌ Error: Food ID not found.');
+            }
         });
 
         function renderFoodInsidePartialView(html) {

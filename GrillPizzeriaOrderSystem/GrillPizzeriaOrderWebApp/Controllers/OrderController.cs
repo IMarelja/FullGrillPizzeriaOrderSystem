@@ -21,7 +21,6 @@ namespace GrillPizzeriaOrderWebApp.Controllers
             _foodService = foodService;
         }
 
-        [HttpGet]
         [Authorize(Policy = "UserOnly")]
         public IActionResult Index()
             => View();
@@ -78,11 +77,42 @@ namespace GrillPizzeriaOrderWebApp.Controllers
 
             var model = orders?.Select(o => new OrderViewModel
             {
-                // map properties...
+                Id = o.Id,
+                OrderDate = o.OrderDate,
+                OrderTotalPrice = o.OrderTotalPrice,
+                Items = o.Items.Select(oi => new OrderItemViewModel
+                {
+                    Quantity = oi.Quantity,
+                    LineTotal = oi.LineTotal,
+                    Food = new FoodViewModel
+                    {
+                        id = oi.Food.id,
+                        name = oi.Food.name,
+                        description = oi.Food.description,
+                        price = oi.Food.price,
+                        imagePath = oi.Food.imagePath,
+
+                        // map category
+                        category = new CategoryFoodViewModel
+                        {
+                            id = oi.Food.category.id,
+                            name = oi.Food.category.name
+                        },
+
+                        // map allergens
+                        allergens = oi.Food.allergens
+                            .Select(a => new AllergenViewModel
+                            {
+                                id = a.id,
+                                name = a.name
+                            })
+                            .ToList()
+                    }
+                }).ToList()
             }).ToList() ?? new List<OrderViewModel>();
 
 
-            return PartialView("~/Views/Order/_SentOrders.cshtml", model);
+            return PartialView("_SentOrders", model);
         }
 
         [HttpPost]

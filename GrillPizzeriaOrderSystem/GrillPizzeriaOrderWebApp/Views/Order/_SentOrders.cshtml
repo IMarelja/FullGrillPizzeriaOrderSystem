@@ -1,7 +1,6 @@
 ﻿@model List<ViewModels.OrderViewModel>
 
 <div class="mb-3">
-    <h3 class="h5 mb-3">My Orders</h3>
 
     @if (Model == null || !Model.Any())
     {
@@ -32,10 +31,10 @@
                                 aria-controls="collapse-@orderIndex">
                             <div class="w-100 d-flex flex-wrap gap-2 align-items-center">
                                 <span class="fw-semibold">Order #@order.Id</span>
-                                <span class="badge">@order.OrderDate.ToString("MMM dd, yyyy")</span>
+                                <span class="badge text-black">@order.OrderDate.ToString("MMM dd, yyyy")</span>
                                 <span class="ms-auto d-inline-flex gap-2">
-                                    <span class="badge text-bg-primary">@itemCount item(s)</span>
-                                    <span class="badge text-bg-success">Total: @computedTotal.ToString("C")</span>
+                                    <span class="badge text-bg-primary text-black">@itemCount item(s)</span>
+                                    <span class="badge text-bg-success text-black">Total: @computedTotal.ToString("C")</span>
                                 </span>
                             </div>
                         </button>
@@ -45,7 +44,7 @@
                          aria-labelledby="heading-@orderIndex"
                          data-bs-parent="#ordersAccordion">
                         <div class="accordion-body p-0">
-                            @if (order.Items != null && order.Items.Any())
+                            @if (order.Items != null || order.Items.Any())
                             {
                                 <ul class="list-group list-group-flush">
                                     @foreach (var item in order.Items)
@@ -56,10 +55,7 @@
                                                 <div class="flex-grow-1">
                                                     <div class="d-flex flex-wrap align-items-center gap-2">
                                                         <span class="fw-semibold">@food?.name</span>
-                                                        @if (!string.IsNullOrWhiteSpace(food?.category?.name))
-                                                        {
-                                                            <span class="badge border">@food.category.name</span>
-                                                        }
+                                                        <span class="badge border text-black">@food?.category.name</span>
                                                     </div>
 
                                                     @if (!string.IsNullOrWhiteSpace(food?.description))
