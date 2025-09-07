@@ -88,7 +88,7 @@ namespace GrillPizzeriaOrderWebApp.Services.APIs
                 return ApiOperationResult.Fail($"Update failed ({(int)response.StatusCode}): {raw}");
             }
 
-            return ApiOperationResult.Ok("Food category updated successfully.");
+            return ApiOperationResult.Ok("Food updated successfully.");
         }
 
         public async Task<ApiOperationResult> DeleteAsync(FoodDeleteViewModel food)
