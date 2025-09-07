@@ -38,9 +38,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 var dtos = _mapper.Map<IEnumerable<LogReadDto>>(logs);
                 return Ok(dtos);
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"Log.GetLast database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "Log.GetLast, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"Log.GetLast SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
@@ -58,9 +68,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 var total = await _context.Log.CountAsync();
                 return Ok(total);
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"Log.Count database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "Log.Count, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"Log.Count SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {

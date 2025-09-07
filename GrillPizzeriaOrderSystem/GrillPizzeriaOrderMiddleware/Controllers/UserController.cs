@@ -44,9 +44,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 var dto = _mapper.Map<UserReadDto>(user);
                 return Ok(dto);
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"User.GetMe database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "User.GetMe, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"User.GetMe SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
@@ -79,9 +89,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 var dtos = _mapper.Map<IEnumerable<UserReadDto>>(users);
                 return Ok(dtos);
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"User.GetAll database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "User.GetAll, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"User.GetAll SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
@@ -121,13 +141,23 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
                 return Ok(_mapper.Map<UserReadDto>(user));
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"User.UpdateMe database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
-                return StatusCode(503, "User.GetAll, database connection error: " + ex.Message);
+                return StatusCode(503, "User.UpdateMe, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"User.UpdateMe SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
-                await log.Error($"User.GetAll failed: {ex.Message}");
+                await log.Error($"User.UpdateMe failed: {ex.Message}");
                 return StatusCode(500, "Internal server error: " + ex.Message);
             }
         }

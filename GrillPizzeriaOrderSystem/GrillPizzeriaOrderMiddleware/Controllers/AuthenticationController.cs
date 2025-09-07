@@ -55,9 +55,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 await log.Information($"Authentication.Login: Logged in user id={user.Id}, role={user.Role.Name}.");
                 return Ok(new { token });
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"Authentication.Login database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "Authentication.Login, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"Authentication.Login SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
@@ -104,9 +114,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 await log.Information($"Authentication.Register: Registered user id={user.Id}, role={user.Role.Name}.");
                 return Ok("User registered successfully.");
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"Authentication.Register database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "Authentication.Register, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"Authentication.Register SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
@@ -154,9 +174,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
 
                 return Ok("Password successfully changed");
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"Authentication.ChangePassword database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "Authentication.ChangePassword, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"Authentication.ChangePassword SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {

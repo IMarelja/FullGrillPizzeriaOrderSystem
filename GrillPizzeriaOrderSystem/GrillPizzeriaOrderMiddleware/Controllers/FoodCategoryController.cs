@@ -90,6 +90,11 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
             {
                 return StatusCode(503, "FoodCategory.GetAll, database connection error: " + ex.Message);
             }
+            catch (SqlException ex)
+            {
+                await log.Error($"FoodCategory.GetAll SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
+            }
             catch (Exception ex)
             {
                 await log.Error($"FoodCategory.GetAll failed: {ex.Message}");
@@ -111,13 +116,23 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 var dto = _mapper.Map<FoodCategoryReadDto>(entity);
                 return Ok(dto);
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"FoodCategory.GetById database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "FoodCategory.Get, database connection error: " + ex.Message);
             }
+            catch (SqlException ex)
+            {
+                await log.Error($"FoodCategory.GetById SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
+            }
             catch (Exception ex)
             {
-                await log.Error($"FoodCategory.Get failed: {ex.Message}");
+                await log.Error($"FoodCategory.GetById failed: {ex.Message}");
                 return StatusCode(500, "Internal server error: " + ex.Message);
             }
         }

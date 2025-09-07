@@ -39,9 +39,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 await log.Information($"Orders.GetAll success: count={orders.Count}");
                 return Ok(_mapper.Map<IEnumerable<OrderReadDto>>(orders));
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"Order.GetAll database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "Order.GetAll, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"Order.GetAll SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
@@ -70,9 +80,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 await log.Information($"Orders.GetById success: id={id}");
                 return Ok(_mapper.Map<OrderReadDto>(order));
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"Order.GetById database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "Order.GetById, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"Order.GetById SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
@@ -107,9 +127,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 await log.Information($"Orders.GetMyOrders success: userId={userId}, count={orders.Count}");
                 return Ok(_mapper.Map<IEnumerable<OrderReadDto>>(orders));
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"Order.GetMyOrders database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "Order.GetMyOrders, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"Order.GetMyOrders SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
@@ -195,9 +225,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 await log.Information($"Orders.Create success: id={order.Id}, items={order.OrderFoods.Count}, total={order.OrderTotalPrice}");
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, _mapper.Map<OrderReadDto>(created));
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"Order.Create database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "Order.Create, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"Order.Create SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
@@ -239,9 +279,19 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                 await log.Information($"Orders.Delete success: id={id}, by={(isAdmin ? "admin" : $"user {userId}")}");
                 return Ok($"Successfully deleted order {id}");
             }
+            catch (DbUpdateException ex)
+            {
+                await log.Error($"Order.Delete database error: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Database execution error. Operation could not be completed.");
+            }
             catch (SqlException ex) when (ex.Number == -2 || ex.Number == 2)
             {
                 return StatusCode(503, "Order.Delete, database connection error: " + ex.Message);
+            }
+            catch (SqlException ex)
+            {
+                await log.Error($"Order.Delete SQL error: {ex.Message}");
+                return StatusCode(500, "SQL error occurred: " + ex.Message);
             }
             catch (Exception ex)
             {
