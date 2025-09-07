@@ -122,6 +122,7 @@ namespace GrillPizzeriaOrderMiddleware.Controllers
                     .Include(o => o.OrderFoods)
                         .ThenInclude(oi => oi.Food)
                             .ThenInclude(f => f.FoodAllergens)
+                                .ThenInclude(fa => fa.Allergen)
                     .ToListAsync();
 
                 await log.Information($"Orders.GetMyOrders success: userId={userId}, count={orders.Count}");
