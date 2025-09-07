@@ -1,12 +1,103 @@
-﻿@using Microsoft.AspNetCore.Antiforgery
+﻿@model ViewModels.FoodViewModel
 @{
-    ViewData["Title"] = "Delete food";
+    ViewData["Title"] = "Delete Food Item";
 }
-
 
 <div id="messageForFoodInfo" class="alert visually-hidden" role="alert"></div>
 
-<div>
+<div class="container mt-4">
+    <h3 class="text-danger mb-3">Are you sure you want to delete this item?</h3>
 
+    <table class="table table-bordered">
+        <tr>
+            <th>Name</th>
+            <td>@Model.name</td>
+        </tr>
+        <tr>
+            <th>Description</th>
+            <td>@Model.description</td>
+        </tr>
+        <tr>
+            <th>Price</th>
+            <td>@Model.price.ToString("C")</td>
+        </tr>
+        <tr>
+            <th>Category</th>
+            <td>@Model.category?.name</td>
+        </tr>
+        <tr>
+            <th>Allergens</th>
+            <td>
+                @if (Model.allergens != null && Model.allergens.Any())
+                {
+                    <ul class="mb-0">
+                        @foreach (var allergen in Model.allergens)
+                        {
+                            <li>@allergen.name</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <span>No allergens</span>
+                }
+            </td>
+        </tr>
+    </table>
 
+    <form>
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="id" />
+        <button id="deleteButton" type="submit" class="btn btn-danger">Delete</button>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
 </div>
+
+@section Scripts {
+    <script>
+        const messageBox = document.getElementById('messageForFoodInfo');
+        
+        function showMessage(text, isSuccess) {
+            messageBox.classList.remove('visually-hidden', 'alert-success', 'alert-danger');
+            messageBox.classList.add(isSuccess ? 'alert-success' : 'alert-danger');
+            messageBox.textContent = text;
+        }
+
+        $(document).ready(function () {
+            $('#deleteButton').click(async function (e) {
+                e.preventDefault();
+                $.ajax({
+                    type: "POST",
+                    url: "/Food/Delete",
+                    data: {
+                       foodId: @Model.id
+                    },
+                    success: function (response) {
+                        if (response?.success) {
+                            showMessage(response.message + " (Redirecting back to the Menu...)" || "Food deleted. (Redirecting back to the Menu...)", true);
+                            setTimeout(() => {
+                                window.location.href = "/Menu/Index";
+							}, 1500);
+                        } else {
+                            showMessage(response?.message || "Failed to delete food.", false);
+                        }
+                    },
+                    error: function (xhr, status, err) {
+                        console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                        try {
+                            const r = JSON.parse(xhr.responseText);
+                            if (r?.errors?.length) {
+                                const allErrors = r.errors.map(e => (`${e.field}: ${e.errors.join(", ")}`).join("\n"));
+                                showMessage(allErrors, false);
+                            } else {
+                                showMessage(r.message || "Validation failed.", false);
+                            }
+                        } catch {
+                            showMessage("Unexpected error deleting food.", false);
+                        }
+                    }
+                });
+			});
+		});
+    </script>
+}

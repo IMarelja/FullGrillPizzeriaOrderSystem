@@ -70,6 +70,14 @@ namespace GrillPizzeriaOrderWebApp.Controllers
             });
         }
 
+        [HttpGet]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> EditFoodView(int id)
+        {
+            var food = await _foodService.GetById(id);
+            return View("EditFood", food);
+        }
+
         [HttpPost]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Edit(FoodEditViewModel food)
@@ -102,21 +110,45 @@ namespace GrillPizzeriaOrderWebApp.Controllers
             });
         }
 
+        [HttpGet]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> DeleteFoodView(int id)
+        {
+            var food = await _foodService.GetById(id);
+            return View("DeleteFood", food);
+        }
+
 
         [HttpPost]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult > Delete(int foodId)
         {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                        .Where(ms => ms.Value?.Errors.Count > 0)
+                        .Select(ms => new
+                        {
+                            Field = ms.Key,
+                            Errors = ms.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                        });
 
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Invalid Food request",
+                    errors
+                });
+            }
 
-            FoodDeleteViewModel foodDeleteViewModel = new FoodDeleteViewModel() { id = foodId };
+            var responce = await _foodService.DeleteAsync(new FoodDeleteViewModel { id = foodId });
 
-            var responce = await _foodService.DeleteAsync(foodDeleteViewModel);
-
-            if (!responce.Succeeded)
-                return RedirectToAction("Index");
-
-            return View();
+            return Ok(new
+            {
+                success = responce.Succeeded,
+                data = responce,
+                message = responce.Message + " " + string.Join(", ", responce.Errors),
+            });
         }
 
         [HttpGet]

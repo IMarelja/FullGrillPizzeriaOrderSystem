@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.Antiforgery
+﻿@model ViewModels.FoodViewModel
+@using Microsoft.AspNetCore.Antiforgery
 @{
     ViewData["Title"] = "Edit food";
 }
@@ -9,21 +10,21 @@
 <div id="editDialog" class="p-4 rounded shadow-lg">
     <form id="formEditFood" method="post" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
-        <h3 class="mb-3">Edit Food Item</h3>
+        <h3 class="mb-3">Edit Food Item (ID = @Model.id)</h3>
 
         <div class="mb-3">
             <label class="form-label" for="name">Name</label>
-            <input id="name" name="name" class="form-control" />
+            <input id="name" name="name" class="form-control" value="@Model.name" />
         </div>
 
         <div class="mb-3">
             <label class="form-label" for="description">Description</label>
-            <textarea id="description" name="description" class="form-control"></textarea>
+            <textarea id="description" name="description" class="form-control">@Model.description</textarea>
         </div>
 
         <div class="mb-3">
             <label class="form-label" for="price">Price</label>
-            <input id="price" name="price" type="number" step="0.01" inputmode="decimal" class="form-control" />
+            <input id="price" name="price" type="number" step="0.01" inputmode="decimal" class="form-control" value="@Model.price.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)" />
         </div>
 
         <div class="mb-3">
@@ -38,7 +39,7 @@
             <div id="allergenCheckboxContainer"></div>
         </div>
 
-        <button id="pushTheNewFood" class="mb-3 btn btn-info">Edit food</button>
+        <button id="pushTheEditedFood" class="mb-3 btn btn-info">Edit food</button>
     </form>
 </div>
 
@@ -51,47 +52,45 @@
 
         const messageBox = document.getElementById('messageForFoodInfo');
 
-        $(document).ready(function () {
+        $(document).ready(async function () {
+            try {
+                await Promise.all([LoadFoodCategory(), LoadAllergens()]);
 
-            LoadFoodCategory();
-            LoadAllergens();
+                await LoadCategoryFoodSelected()
+                await LoadAllergensSelected();
 
-            $('#foodCategorySelect').on('change', function () {
-                $('#editSelectFoodCategoryHiddenId').val($(this).val());
-            });
+                $('#foodCategorySelect').on('change', function () {
+                    $('#editSelectFoodCategoryHiddenId').val($(this).val());
+                });
 
-            $("#pushTheNewFood").click(function(e) {
-                e.preventDefault();
-                EditNewFood();
-            });
-
-            LoadEditableFood();
+                $("#pushTheEditedFood").click(function(e) {
+                    e.preventDefault();
+                    EditNewFood();
+                });
+            } catch (error) {
+                showMessage("An error occurred during initialization.\n" + error + " Please try again later.", false);
+            }
         });
 
-        function LoadEditableFood(){
-            $.ajax({
-                type: "GET",
-                url: '/Food/GetById',
-                dataType: "json",
-                data: {
-                    id=@ViewData["FoodId"]
-                },
-                cache: true,
-                success: function (response) {
-                    if (response.success) {
-                        var foodcategories = response.data;
-                        console.log('FoodCategories loaded:', foodcategories);
-                        renderFoodCategoryAsDropdown(foodcategories);
-                    } else {
-                        alert(response.message);
-                    }
-                },
-                error: function (xhr, status, err) {
-                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
-                    alert('AJAX: Error loading FoodCategories');
-                }
-            });
+        function LoadCategoryFoodSelected(){
+            var valueCategory = "@Model.category.id";
+            var exists = $(".foodCategoryListDropdown option[value='"+valueCategory+"']").length > 0;
+
+            if (exists) {
+                $('.foodCategoryListDropdown').val('@Model.category.id');
+            } else {
+				showMessage("The food category associated with this food item no longer exists. Please select a new category.", false);
+                $('.foodCategoryListDropdown').val('0');
+            }
         }
+
+        function LoadAllergensSelected(){
+            var selectedAllergenIds = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.allergens?.Select(a => a.id).ToList() ?? new List<int>()));
+
+            selectedAllergenIds.forEach(function(id) {
+                $(`#allergen_${id}`).prop('checked', true);
+            });
+		}
 
         function showMessage(text, isSuccess) {
             messageBox.classList.remove('visually-hidden', 'alert-success', 'alert-danger');
@@ -100,7 +99,7 @@
         }
 
         function LoadFoodCategory(){
-            $.ajax({
+            return $.ajax({
                 type: "GET",
                 url: '/FoodCategory/GetAll',
                 dataType: "json",
@@ -122,7 +121,7 @@
         }
 
         function renderFoodCategoryAsDropdown(foodcategories) {
-            var html = '<option value="0">Select an Food Category</option>';
+            var html = '<option value="0">Select a Category</option>';
             foodcategories.forEach(function(foodcategory) {
                 html += `<option value="${foodcategory.id}">${foodcategory.name}</option>`;
             });
@@ -133,7 +132,7 @@
         }
 
         function LoadAllergens(){
-            $.ajax({
+            return $.ajax({
                 type: "GET",
                 url: '/Allergen/GetAll',
                 dataType: "json",
@@ -190,6 +189,7 @@
             }).get();
 
             let payload = {
+				id : @Model.id,
                 name: $('#name').val()?.trim(),
                 description: $('#description').val()?.trim(),
                 price: normalizePrice($('#price').val()),
@@ -219,7 +219,7 @@
                     try {
                         const r = JSON.parse(xhr.responseText);
                         if (r?.errors?.length) {
-                            const allErrors = r.errors.map(e => `${e.field}: ${e.errors.join(", ")}`).join("\n");
+                            const allErrors = r.errors.map(e => (`${e.field}: ${e.errors.join(", ")}`).join("\n"));
                             showMessage(allErrors, false);
                         } else {
                             showMessage(r.message || "Validation failed.", false);
