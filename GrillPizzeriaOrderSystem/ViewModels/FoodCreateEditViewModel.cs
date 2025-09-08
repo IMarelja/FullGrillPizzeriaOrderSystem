@@ -24,7 +24,7 @@ namespace ViewModels
         public decimal price { get; set; }
         [StringLength(ValidationConstants.ImagePathMaxLength)]
         public string? imagePath { get; set; }
-        public IFormFile? imageFile { get; set; }
+        public IFormFile? imageUpload { get; set; }
 
         [Required]
         public int foodCategoryId { get; set; }
@@ -36,5 +36,7 @@ namespace ViewModels
     {
         [Required]
         public int id { get; set; }
+
+        public bool defaultImageKeep { get; set; } = false;
     }
 }

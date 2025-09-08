@@ -21,6 +21,32 @@
             <textarea id="description" name="description" class="form-control"></textarea>
         </div>
 
+        <!-- Add image upload field -->
+        <div class="mb-3 position-relative">
+            <label class="form-label" for="imageUpload">Food Image</label>
+            <div class="position-relative">
+                <input id="imageUpload" name="ImageUpload" type="file"
+                       accept=".jpg,.jpeg,.png,.gif" class="form-control pe-5" />
+                <!-- X button -->
+                <button type="button" id="clearImageBtn"
+                        class="btn btn-sm btn-outline-secondary position-absolute top-50 end-0 translate-middle-y me-2"
+                        style="display:none;">
+                    ✕
+                </button>
+            </div>
+            <small class="form-text text-muted">
+                Accepted formats: JPG, JPEG, PNG, GIF (Max: 5MB)
+            </small>
+            <small id="imageWarnings" class="text-danger"></small>
+        </div>
+        <!-- Preview container -->
+        <div class="mb-3" id="imagePreviewContainer" style="display: none;">
+            <label class="form-label">Preview</label>
+            <div>
+                <img id="imagePreview" src="#" alt="Preview" class="img-thumbnail" style="max-width: 200px; max-height: 200px;" />
+            </div>
+        </div>
+
         <div class="mb-3">
             <label class="form-label" for="price">Price</label>
             <input id="price" name="price" type="number" step="0.01" inputmode="decimal" class="form-control" />
@@ -51,6 +77,9 @@
 
         const messageBox = document.getElementById('messageForFoodInfo');
 
+		const imagePreview = document.getElementById('imagePreview');
+        const clearBtn = document.getElementById("clearImageBtn");
+
         $(document).ready(function () {
 
             LoadFoodCategory();
@@ -64,6 +93,61 @@
 				e.preventDefault();
 				CreateNewFood();
             });
+
+			// Image logic
+
+            $('#imageUpload').on('change', function () {
+                $('#imageWarnings').text('');
+                var file = this.files[0];
+
+                if (!file) {
+                    $('#imagePreview').attr('src', '#');
+                    $('#imagePreviewContainer').hide();
+                    $('#clearImageBtn').hide();
+                    $('#imageWarnings').text('Failed uploading file');
+                    return;
+                }
+
+                // Allowed formats
+                var allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+
+                // File size check (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    $('#clearImageBtn').hide();
+                    $('#imageWarnings').text('File size exceeds 5MB limit');
+                    return;
+                }
+
+                // File format check
+                if (!allowedTypes.includes(file.type)) {
+                    $('#clearImageBtn').hide();
+                    $('#imageWarnings').text('Invalid file format. Please upload JPG, PNG or GIF.');
+                    return;
+                }
+
+                // Show image preview
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    $('#imagePreview').attr('src', e.target.result);
+                    $('#imagePreviewContainer').show();
+                };
+                reader.readAsDataURL(file);
+
+                // Show clear button
+                $('#clearImageBtn').show();
+            });
+
+
+            $('#clearImageBtn').on('click', function () {
+                $('#imageUpload').val('');
+                const el = document.getElementById('imageUpload');
+                if (el) el.value = "";
+                $('#imagePreview').attr('src', '#');
+                $('#imagePreviewContainer').hide();
+                $('#clearImageBtn').hide();
+                $('#imageWarnings').text('');
+            });
+
         });
 
         function showMessage(text, isSuccess) {
@@ -157,10 +241,14 @@
             return parseFloat(v.replace(',', '.'));
         }
         
+        /*
         function CreateNewFood(){
+
             const selectedAllergenIds = $('input[name="allergenId"]:checked').map(function(){
                 return parseInt(this.value);
             }).get();
+
+            var file = $('#imageUpload').files[0];
 
             let payload = {
                 name: $('#name').val()?.trim(),
@@ -170,11 +258,25 @@
                 allergenIds: selectedAllergenIds
             };
 
+            if(file){
+				payload.imageUpload = file;
+            }
+
             // Basic client-side check to avoid empty model
             if (!payload.name || !payload.description) {
                 showMessage("Name and Description are required.", false);
                 return;
             }
+
+            if($dropDownsFoodCategorySelected[0].value === "0"){
+                showMessage("Please select a valid Food Category.", false);
+                return;
+			}
+
+            if (isNaN(payload.price) || payload.price <= 0) {
+                showMessage("Please enter a valid positive price.", false);
+                return;
+			}
 
             $.ajax({
                 type: "POST",
@@ -202,8 +304,97 @@
                     }
                 }
             });
-		}
+		}*/
 
+        function CreateNewFood() {
+            // collect allergen ids
+            const selectedAllergenIds = $('input[name="allergenId"]:checked')
+                .map(function () { return parseInt(this.value); })
+                .get();
+
+            // read the file correctly
+            const fileInput = document.getElementById('imageUpload');
+            const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+
+            // read category safely
+            const selectedCategory = $('#foodCategorySelect').val();
+
+            // payload fields (non-file)
+            const name = $('#name').val()?.trim();
+            const description = $('#description').val()?.trim();
+            const price = normalizePrice($('#price').val());
+
+            // basic validations
+            if (!name || !description) {
+                showMessage("Name and Description are required.", false);
+                return;
+            }
+            if (!selectedCategory || selectedCategory === "0") {
+                showMessage("Please select a valid Food Category.", false);
+                return;
+            }
+            if (isNaN(price) || price <= 0) {
+                showMessage("Please enter a valid positive price.", false);
+                return;
+            }
+
+            // build FormData for multipart/form-data
+            const fd = new FormData();
+            fd.append('name', name);
+            fd.append('description', description);
+            fd.append('price', price); // decimal will bind fine as string
+            fd.append('foodCategoryId', parseInt(selectedCategory));
+
+            // bind list of ints so ASP.NET Core model binder picks it up
+            selectedAllergenIds.forEach((id, i) => fd.append(`allergenIds[${i}]`, id));
+
+            if (file) {
+                // name MUST match your view model property: IFormFile? ImageUpload
+                fd.append('imageUpload', file);
+            }
+
+            $('#formCreateFood').addClass("form-disabled");
+
+            $.ajax({
+                type: "POST",
+                url: "/Food/Create",
+                data: fd,
+                processData: false,     // don't stringify FormData
+                contentType: false,     // let browser set multipart/form-data with boundary
+                success: function (response) {
+                    if (response?.success) {
+                        showMessage(response.message || "Food created.", true);
+                    } else {
+                        showMessage(response?.message || "Failed to create food.", false);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err, 'HTTP:', xhr.status, 'Response:', xhr.responseText);
+                    try {
+                        const r = JSON.parse(xhr.responseText);
+                        if (r?.errors?.length) {
+                            const allErrors = r.errors.map(e => `${e.field}: ${e.errors.join(", ")}`).join("\n");
+                            showMessage(allErrors, false);
+                        } else {
+                            showMessage(r.message || "Validation failed.", false);
+                        }
+                    } catch {
+                        showMessage("Unexpected error creating food.", false);
+                    }
+                },
+                complete: function () {
+                    // Re-enable form after request finishes
+                    $('#formCreateFood').removeClass("form-disabled");
+                }
+            });
+        }
 
     </script>
 }
+
+<style>
+    .form-disabled {
+        pointer-events: none; /* prevents interaction */
+        opacity: 0.5; /* makes it look dimmed */
+    }
+</style>

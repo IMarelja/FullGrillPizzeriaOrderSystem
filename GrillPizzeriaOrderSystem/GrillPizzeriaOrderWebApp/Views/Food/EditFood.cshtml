@@ -22,6 +22,54 @@
             <textarea id="description" name="description" class="form-control">@Model.description</textarea>
         </div>
 
+        <!-- Add image upload field -->
+        <div class="mb-3 position-relative">
+            <label class="form-label" for="imageUpload">Food Image</label>
+            <div class="position-relative">
+                <input id="imageUpload" name="imageUpload" type="file"
+                       accept=".jpg,.jpeg,.png,.gif" class="form-control pe-5"/>
+                <!-- X button -->
+                <button type="button" id="clearImageBtn"
+                        class="btn btn-sm btn-outline-secondary position-absolute top-50 end-0 translate-middle-y me-2"
+                        style="display:none;">
+                    ✕
+                </button>
+
+                <!-- Undo button -->
+                <button type="button" id="undoImageBtn"
+                        class="btn btn-sm btn-outline-secondary position-absolute top-50 end-0 translate-middle-y me-5"
+                        style="display:none;">
+                    Undo
+                </button>
+            </div>
+            <small class="form-text text-muted">
+                Accepted formats: JPG, JPEG, PNG, GIF (Max: 5MB)
+            </small>
+            <small id="imageWarnings" class="text-danger"></small>
+        </div>
+        <!-- Preview container -->
+        <div class="mb-3" id="imagePreviewContainer" style="display: none;">
+            <label class="form-label">Preview</label>
+            <div style="position: relative; display: inline-block;">
+                <div id="defaultImageLabel" style="
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%) rotate(-45deg);
+                    color: rgba(255, 255, 255, 0.8);
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    pointer-events: none;
+                    z-index: 10;
+                    font-size: 50px;
+                ">
+                    Default
+                </div>
+                <img id="imagePreview" src="#" class="img-thumbnail" style="max-width: 200px; max-height: 200px;" />
+            </div>
+        </div>
+
         <div class="mb-3">
             <label class="form-label" for="price">Price</label>
             <input id="price" name="price" type="number" step="0.01" inputmode="decimal" class="form-control" value="@Model.price.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)" />
@@ -52,12 +100,17 @@
 
         const messageBox = document.getElementById('messageForFoodInfo');
 
+        const imagePreview = document.getElementById('imagePreview');
+        const clearBtn = document.getElementById("clearImageBtn");
+        let defaultSelectedImage = true;
+
         $(document).ready(async function () {
             try {
                 await Promise.all([LoadFoodCategory(), LoadAllergens()]);
 
                 await LoadCategoryFoodSelected()
                 await LoadAllergensSelected();
+                await LoadImageSelected();
 
                 $('#foodCategorySelect').on('change', function () {
                     $('#editSelectFoodCategoryHiddenId').val($(this).val());
@@ -67,10 +120,111 @@
                     e.preventDefault();
                     EditNewFood();
                 });
+
+                // Image logic
+
+                $('#imageUpload').on('change', function () {
+                    $('#imageWarnings').text('');
+                    var file = this.files[0];
+
+                    if (!file) {
+                        $('#imagePreview').attr('src', '#');
+                        $('#imagePreviewContainer').hide();
+                        $('#clearImageBtn').hide();
+                        $('#imageWarnings').text('Failed uploading file');
+                        return;
+                    }
+
+                    // Allowed formats
+                    var allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+
+                    // File size check (max 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        $('#clearImageBtn').hide();
+                        $('#imageWarnings').text('File size exceeds 5MB limit');
+                        return;
+                    }
+
+                    // File format check
+                    if (!allowedTypes.includes(file.type)) {
+                        $('#clearImageBtn').hide();
+                        $('#imageWarnings').text('Invalid file format. Please upload JPG, PNG or GIF.');
+                        return;
+                    }
+
+                    // Show image preview
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#imagePreview').attr('src', e.target.result);
+                        $('#imagePreviewContainer').show();
+                    };
+                    reader.readAsDataURL(file);
+
+                    var imagePath = "@Model.imagePath";
+                    if(imagePath){
+                        $('#undoImageBtn').show();
+                        $('#defaultImageLabel').hide();
+                    } else {
+                        $('#undoImageBtn').hide();
+                    }
+
+                    // Show clear button
+                    $('#clearImageBtn').show();
+					defaultSelectedImage = false;
+                });
+
+
+                $('#clearImageBtn').on('click', function () {
+                    $('#imageUpload').val('');
+                    const el = document.getElementById('imageUpload');
+                    if (el) el.value = "";
+                    $('#imagePreview').attr('src', '#');
+                    $('#imagePreviewContainer').hide();
+                    $('#clearImageBtn').hide();
+                    $('#imageWarnings').text('');
+                    $('#defaultImageLabel').hide();
+
+                    var imagePath = "@Model.imagePath";
+                    if(imagePath){
+                        $('#undoImageBtn').show();
+                        defaultSelectedImage = false;
+
+                    } else {
+                        $('#undoImageBtn').hide();
+					}
+                });
+                var imagePath = "@Model.imagePath";
+                if (imagePath) {
+                    $('#undoImageBtn').on('click', function () {
+                        LoadImageSelected();
+                        defaultSelectedImage = true;
+                        $('#undoImageBtn').hide();
+				    });
+                }
             } catch (error) {
                 showMessage("An error occurred during initialization.\n" + error + " Please try again later.", false);
             }
         });
+
+        function LoadImageSelected(){
+            var imagePath = "@Model.imagePath";
+            if (imagePath) {
+				defaultSelectedImage = true;
+                $('#imageUpload').val('');
+                const el = document.getElementById('imageUpload');
+                if (el) el.value = "";
+                $('#imagePreview').attr('src', imagePath);
+                $('#imagePreviewContainer').show();
+                $('#clearImageBtn').show();
+                $('#defaultImageLabel').show();
+            } else {
+				defaultSelectedImage = false;
+                $('#imagePreviewContainer').hide();
+                $('#clearImageBtn').hide();
+				$('#undoImageBtn').hide();
+                $('#defaultImageLabel').hide();
+            }
+		}
 
         function LoadCategoryFoodSelected(){
             var valueCategory = "@Model.category.id";
@@ -184,29 +338,67 @@
         }
 
         function EditNewFood(){
-            const selectedAllergenIds = $('input[name="allergenId"]:checked').map(function(){
-                return parseInt(this.value);
-            }).get();
+            // collect allergen ids
+            const selectedAllergenIds = $('input[name="allergenId"]:checked')
+                .map(function () { return parseInt(this.value); })
+                .get();
 
-            let payload = {
-				id : @Model.id,
-                name: $('#name').val()?.trim(),
-                description: $('#description').val()?.trim(),
-                price: normalizePrice($('#price').val()),
-                foodCategoryId: parseInt($('#foodCategorySelect').val() || '0'),
-                allergenIds: selectedAllergenIds
-            };
+            // already selected image path
+			const imageKeep = defaultSelectedImage;
+			const existingImagePath = "@Model.imagePath";
 
-            // Basic client-side check to avoid empty model
-            if (!payload.name || !payload.description) {
+            // read the file correctly
+            const fileInput = document.getElementById('imageUpload');
+            const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+
+            // read category safely
+            const selectedCategory = $('#foodCategorySelect').val();
+
+            // payload fields (non-file)
+            const name = $('#name').val()?.trim();
+            const description = $('#description').val()?.trim();
+            const price = normalizePrice($('#price').val());
+
+            // basic validations
+            if (!name || !description) {
                 showMessage("Name and Description are required.", false);
                 return;
             }
+            if (!selectedCategory || selectedCategory === "0") {
+                showMessage("Please select a valid Food Category.", false);
+                return;
+            }
+            if (isNaN(price) || price <= 0) {
+                showMessage("Please enter a valid positive price.", false);
+                return;
+            }
+
+            // build FormData for multipart/form-data
+            const fd = new FormData();
+			fd.append('id', @Model.id);
+            fd.append('name', name);
+            fd.append('description', description);
+            fd.append('price', price); // decimal will bind fine as string
+            fd.append('foodCategoryId', parseInt(selectedCategory));
+            fd.append('imagePath', existingImagePath);
+            fd.append('defaultImageKeep', imageKeep); // whether to keep existing image or not
+
+            // bind list of ints so ASP.NET Core model binder picks it up
+            selectedAllergenIds.forEach((id, i) => fd.append(`allergenIds[${i}]`, id));
+
+            if (file) {
+                // name MUST match your view model property: IFormFile? ImageUpload
+                fd.append('imageUpload', file);
+            }
+
+            $('#formEditFood').addClass("form-disabled");
 
             $.ajax({
                 type: "POST",
                 url: "/Food/Edit",
-                data: payload,
+                data: fd,
+                processData: false,     // don't stringify FormData
+                contentType: false,     // let browser set multipart/form-data with boundary
                 success: function (response) {
                     if (response?.success) {
                         showMessage(response.message || "Food edited.", true);
@@ -227,6 +419,10 @@
                     } catch {
                         showMessage("Unexpected error editing food.", false);
                     }
+                },
+                complete: function () {
+                    // Re-enable form after request finishes
+                    $('#formEditFood').removeClass("form-disabled");
                 }
             });
         }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace ViewModels
 {
@@ -13,6 +14,7 @@ namespace ViewModels
         public string description { get; set; } = string.Empty;
         public decimal price { get; set; }
         public string? imagePath { get; set; }
+        public IFormFile? imageUpload { get; set; }
         public CategoryFoodViewModel category { get; set; } = new();
         public List<AllergenViewModel> allergens { get; set; } = new();
     }
