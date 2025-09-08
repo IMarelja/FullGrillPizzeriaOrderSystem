@@ -20,3 +20,7 @@ GrillPizzeriaOrderSystem/ViewModels/obj/
 GrillPizzeriaOrderSystem/.vs/
 
 Database/BaseCreate.sql
+
+GrillPizzeriaOrderSystem/GrillPizzeriaOrderWebApp/wwwroot/images/*
+!GrillPizzeriaOrderSystem/GrillPizzeriaOrderWebApp/wwwroot/images/hero-pizza-grill.png
+
